@@ -246,6 +246,17 @@ function renderGroups() {
           Eliminar grupo
         </button>
       </div>
+      <div class="assign-row" style="margin-top: 10px;">
+        <button class="btn btn-primary btn-small" data-action="generate-matches" data-group-id="${group.id}"
+          ${(group.teams || []).length < 2 ? "disabled" : ""}>
+          Generar calendario Round Robin
+        </button>
+        ${
+          (group.teams || []).length < 2
+            ? `<span class="empty-state">Necesitas al menos 2 equipos asignados</span>`
+            : ""
+        }
+      </div>
     `;
     container.appendChild(card);
   }
@@ -300,6 +311,19 @@ async function handleDeleteGroup(groupId) {
     "No se pudo eliminar el grupo"
   );
   await loadGroups();
+}
+
+async function handleGenerateMatches(groupId) {
+  const ok = await safeCall(
+    () => Api.generateRoundRobinMatches(state.selectedTournamentId, groupId),
+    "No se pudo generar el calendario"
+  );
+  if (ok) {
+    showToast(`Calendario generado: ${ok.length} partidos creados`);
+    switchView("matches");
+    document.getElementById("match-tournament-select").value = state.selectedTournamentId;
+    await loadMatches();
+  }
 }
 
 // --- Matches ---
@@ -495,6 +519,9 @@ function initDelegatedClicks() {
         break;
       case "delete-group":
         handleDeleteGroup(target.dataset.groupId);
+        break;
+      case "generate-matches":
+        handleGenerateMatches(target.dataset.groupId);
         break;
       case "save-score":
         handleSaveScore(target.dataset.matchId);
