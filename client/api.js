@@ -56,6 +56,8 @@ const Api = (() => {
     deleteGroup: (tournamentId, groupId) => request("DELETE", `/tournaments/${tournamentId}/groups/${groupId}`),
     assignTeams: (tournamentId, groupId, teamIds) =>
       request("PATCH", `/tournaments/${tournamentId}/groups/${groupId}/teams`, { teamIds }),
+    generateRoundRobinMatches: (tournamentId, groupId) =>
+      request("POST", `/tournaments/${tournamentId}/groups/${groupId}/generate-matches`),
 
     // Matches
     getMatches: (tournamentId) => request("GET", `/tournaments/${tournamentId}/matches`),
