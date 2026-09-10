@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Round-Batman — Panel de Torneo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">RB</span>
+        <div class="brand-text">
+          <span class="brand-name">Round-Batman</span>
+          <span class="brand-sub">Panel de torneo</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item is-active" data-view="tournaments">Torneos</button>
+        <button class="nav-item" data-view="teams">Equipos</button>
+        <button class="nav-item" data-view="groups">Grupos</button>
+        <button class="nav-item" data-view="matches">Partidos</button>
+      </nav>
+
+      <div class="api-config">
+        <label for="api-base">URL de la API</label>
+        <input id="api-base" type="text" value="http://localhost:8080" />
+        <span id="api-status" class="api-status">Sin verificar</span>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- Torneos -->
+      <section id="view-tournaments" class="view is-active">
+        <header class="view-header">
+          <h1>Torneos</h1>
+          <p>Crea un torneo y define su formato antes de armar grupos y partidos.</p>
+        </header>
+
+        <form id="form-tournament" class="panel form-inline">
+          <div class="field">
+            <label for="t-name">Nombre</label>
+            <input id="t-name" type="text" placeholder="Copa Arkham" required />
+          </div>
+          <div class="field">
+            <label for="t-type">Formato</label>
+            <select id="t-type">
+              <option value="ROUND_ROBIN">Round Robin</option>
+              <option value="NFL">Eliminación (NFL)</option>
+            </select>
+          </div>
+          <div class="field field-num">
+            <label for="t-groups"># Grupos</label>
+            <input id="t-groups" type="number" min="1" value="1" />
+          </div>
+          <div class="field field-num">
+            <label for="t-max-teams">Máx. equipos/grupo</label>
+            <input id="t-max-teams" type="number" min="2" value="4" />
+          </div>
+          <button type="submit" class="btn btn-primary">Crear torneo</button>
+        </form>
+
+        <div class="panel">
+          <table class="score-table" id="tournaments-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Formato</th>
+                <th class="num">Grupos</th>
+                <th class="num">Partidos</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="empty-state" id="tournaments-empty" hidden>Aún no hay torneos. Crea el primero arriba.</p>
+        </div>
+      </section>
+
+      <!-- Equipos -->
+      <section id="view-teams" class="view">
+        <header class="view-header">
+          <h1>Equipos</h1>
+          <p>Registra los equipos disponibles para asignarlos a grupos más adelante.</p>
+        </header>
+
+        <form id="form-team" class="panel form-inline">
+          <div class="field">
+            <label for="team-name">Nombre del equipo</label>
+            <input id="team-name" type="text" placeholder="Gothica FC" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Agregar equipo</button>
+        </form>
+
+        <div class="panel">
+          <table class="score-table" id="teams-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>ID</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="empty-state" id="teams-empty" hidden>Aún no hay equipos registrados.</p>
+        </div>
+      </section>
+
+      <!-- Grupos -->
+      <section id="view-groups" class="view">
+        <header class="view-header">
+          <h1>Grupos</h1>
+          <p>Selecciona un torneo, crea sus grupos y asígnales equipos.</p>
+        </header>
+
+        <div class="panel">
+          <div class="field">
+            <label for="group-tournament-select">Torneo</label>
+            <select id="group-tournament-select"></select>
+          </div>
+        </div>
+
+        <form id="form-group" class="panel form-inline">
+          <div class="field">
+            <label for="group-name">Nombre del grupo</label>
+            <input id="group-name" type="text" placeholder="Grupo A" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Crear grupo</button>
+        </form>
+
+        <div id="groups-list"></div>
+      </section>
+
+      <!-- Partidos -->
+      <section id="view-matches" class="view">
+        <header class="view-header">
+          <h1>Partidos</h1>
+          <p>Programa enfrentamientos y captura resultados.</p>
+        </header>
+
+        <div class="panel">
+          <div class="field">
+            <label for="match-tournament-select">Torneo</label>
+            <select id="match-tournament-select"></select>
+          </div>
+        </div>
+
+        <form id="form-match" class="panel form-inline">
+          <div class="field">
+            <label for="match-group">Grupo (opcional)</label>
+            <select id="match-group"></select>
+          </div>
+          <div class="field">
+            <label for="match-home">Local</label>
+            <select id="match-home"></select>
+          </div>
+          <div class="field">
+            <label for="match-visitor">Visitante</label>
+            <select id="match-visitor"></select>
+          </div>
+          <button type="submit" class="btn btn-primary">Crear partido</button>
+        </form>
+
+        <div class="panel">
+          <table class="score-table" id="matches-table">
+            <thead>
+              <tr>
+                <th>Local</th>
+                <th class="num">Marcador</th>
+                <th>Visitante</th>
+                <th>Ganador</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="empty-state" id="matches-empty" hidden>Este torneo no tiene partidos todavía.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
