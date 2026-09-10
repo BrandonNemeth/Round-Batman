@@ -1,8 +1,15 @@
+using System.Text.Json.Serialization;
 using RoundBatman.Api.Routes;
 using RoundBatman.Delegates;
 using RoundBatman.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serializar/deserializar enums
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // CORS — necesario para que client/ (servido en otro origen) pueda llamar a esta API
 builder.Services.AddCors(options =>
