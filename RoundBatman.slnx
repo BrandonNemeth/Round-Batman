@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RoundBatman.Api/RoundBatman.Api.csproj" />
+    <Project Path="src/RoundBatman.Delegates/RoundBatman.Delegates.csproj" />
+    <Project Path="src/RoundBatman.Domain/RoundBatman.Domain.csproj" />
+    <Project Path="src/RoundBatman.Repositories/RoundBatman.Repositories.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RoundBatman.Api.Tests/RoundBatman.Api.Tests.csproj" />
+    <Project Path="tests/RoundBatman.Delegates.Tests/RoundBatman.Delegates.Tests.csproj" />
+    <Project Path="tests/RoundBatman.Domain.Tests/RoundBatman.Domain.Tests.csproj" />
+    <Project Path="tests/RoundBatman.Repositories.Tests/RoundBatman.Repositories.Tests.csproj" />
+  </Folder>
+</Solution>
