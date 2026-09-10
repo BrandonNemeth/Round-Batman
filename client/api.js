@@ -1,5 +1,4 @@
 // Cliente HTTP para Round-Batman API.
-// Sigue exactamente el contrato definido en Proyecto_Final_C7.md.
 
 const Api = (() => {
   function baseUrl() {
