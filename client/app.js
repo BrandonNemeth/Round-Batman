@@ -342,6 +342,11 @@ async function loadMatches() {
   renderMatchesTable();
 }
 
+function teamName(teamId) {
+  const team = state.teams.find((t) => t.id === teamId);
+  return team ? team.name : teamId;
+}
+
 function renderMatchesTable() {
   const tbody = document.querySelector("#matches-table tbody");
   const empty = document.getElementById("matches-empty");
@@ -354,8 +359,8 @@ function renderMatchesTable() {
   empty.hidden = true;
 
   for (const match of state.matches) {
-    const homeName = match.homeTeam?.name ?? match.homeTeamId;
-    const visitorName = match.visitorTeam?.name ?? match.visitorTeamId;
+    const homeName = teamName(match.homeTeamId);
+    const visitorName = teamName(match.visitorTeamId);
     const homeScore = match.score?.homeTeamScore ?? 0;
     const visitorScore = match.score?.visitorTeamScore ?? 0;
 
