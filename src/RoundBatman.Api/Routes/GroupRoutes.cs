@@ -13,10 +13,30 @@ public static class GroupRoutes
         group.MapGet("/", async (string tournamentId, IGroupDelegate groupDelegate) =>
             Results.Ok((await groupDelegate.GetAllAsync(tournamentId)).Select(g => g.ToDto())));
 
+        group.MapGet("/{groupId}", async (string tournamentId, string groupId, IGroupDelegate groupDelegate) =>
+        {
+            var found = await groupDelegate.GetByIdAsync(tournamentId, groupId);
+            return found is null ? Results.NotFound() : Results.Ok(found.ToDto());
+        });
+
         group.MapPost("/", async (string tournamentId, CreateGroupDto dto, IGroupDelegate groupDelegate) =>
         {
             var created = await groupDelegate.CreateAsync(tournamentId, dto.Name);
             return Results.Created($"/tournaments/{tournamentId}/groups/{created.Id}", created.ToDto());
+        });
+
+        group.MapPut("/{groupId}", async (
+            string tournamentId, string groupId, UpdateGroupDto dto, IGroupDelegate groupDelegate) =>
+        {
+            try
+            {
+                var updated = await groupDelegate.UpdateAsync(tournamentId, groupId, dto.Name);
+                return Results.Ok(updated.ToDto());
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
         });
 
         group.MapDelete("/{groupId}", async (string tournamentId, string groupId, IGroupDelegate groupDelegate) =>

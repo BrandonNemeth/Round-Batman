@@ -1,5 +1,6 @@
 using RoundBatman.Api.Dtos;
 using RoundBatman.Delegates;
+using RoundBatman.Domain.Exceptions;
 
 namespace RoundBatman.Api.Routes;
 
@@ -23,6 +24,38 @@ public static class TournamentRoutes
             var tournament = await tournamentDelegate.CreateAsync(
                 dto.Name, dto.Format.Type, dto.Format.NumberOfGroups, dto.Format.MaxTeamsPerGroup);
             return Results.Created($"/tournaments/{tournament.Id}", tournament.ToDto());
+        });
+
+        group.MapPut("/{id}", async (string id, UpdateTournamentDto dto, ITournamentDelegate tournamentDelegate) =>
+        {
+            try
+            {
+                var updated = await tournamentDelegate.UpdateAsync(
+                    id, dto.Name, dto.Format.Type, dto.Format.NumberOfGroups, dto.Format.MaxTeamsPerGroup);
+                return Results.Ok(updated.ToDto());
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
+
+        group.MapPatch("/{id}", async (string id, PatchTournamentDto dto, ITournamentDelegate tournamentDelegate) =>
+        {
+            try
+            {
+                var updated = await tournamentDelegate.PatchAsync(
+                    id,
+                    dto.Name,
+                    dto.Format?.Type,
+                    dto.Format?.NumberOfGroups,
+                    dto.Format?.MaxTeamsPerGroup);
+                return Results.Ok(updated.ToDto());
+            }
+            catch (NotFoundException)
+            {
+                return Results.NotFound();
+            }
         });
 
         group.MapDelete("/{id}", async (string id, ITournamentDelegate tournamentDelegate) =>

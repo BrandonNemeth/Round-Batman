@@ -13,6 +13,12 @@ public static class MatchRoutes
         group.MapGet("/", async (string tournamentId, IMatchDelegate matchDelegate) =>
             Results.Ok((await matchDelegate.GetAllAsync(tournamentId)).Select(m => m.ToDto())));
 
+        group.MapGet("/{matchId}", async (string tournamentId, string matchId, IMatchDelegate matchDelegate) =>
+        {
+            var match = await matchDelegate.GetByIdAsync(tournamentId, matchId);
+            return match is null ? Results.NotFound() : Results.Ok(match.ToDto());
+        });
+
         group.MapPost("/", async (string tournamentId, CreateMatchDto dto, IMatchDelegate matchDelegate) =>
         {
             var match = await matchDelegate.CreateAsync(tournamentId, dto.GroupId, dto.HomeTeamId, dto.VisitorTeamId);

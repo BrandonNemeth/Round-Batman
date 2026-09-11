@@ -9,6 +9,9 @@ public class MatchDelegate(IMatchRepository matchRepository, IGroupRepository gr
 {
     public Task<List<Match>> GetAllAsync(string tournamentId) => matchRepository.GetAllAsync(tournamentId);
 
+    public Task<Match?> GetByIdAsync(string tournamentId, string matchId) =>
+        matchRepository.GetByIdAsync(tournamentId, matchId);
+
     public Task<Match> CreateAsync(string tournamentId, string? groupId, string homeTeamId, string visitorTeamId)
     {
         var match = new Match

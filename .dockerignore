@@ -1,0 +1,9 @@
+bin/
+obj/
+**/bin/
+**/obj/
+client/
+tests/
+.git/
+*.md
+build.log

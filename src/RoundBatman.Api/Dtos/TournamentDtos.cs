@@ -4,6 +4,10 @@ namespace RoundBatman.Api.Dtos;
 
 public record TournamentFormatDto(TournamentType Type, int NumberOfGroups, int MaxTeamsPerGroup);
 public record CreateTournamentDto(string Name, TournamentFormatDto Format);
+public record UpdateTournamentDto(string Name, TournamentFormatDto Format);
+
+public record PatchTournamentFormatDto(TournamentType? Type, int? NumberOfGroups, int? MaxTeamsPerGroup);
+public record PatchTournamentDto(string? Name, PatchTournamentFormatDto? Format);
 
 public record TournamentDto(
     string Id,

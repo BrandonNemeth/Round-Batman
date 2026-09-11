@@ -16,6 +16,12 @@ public class TournamentRepository(InMemoryDataStore store) : ITournamentReposito
         return Task.FromResult(tournament);
     }
 
+    public Task UpdateAsync(Tournament tournament)
+    {
+        store.Tournaments[tournament.Id] = tournament;
+        return Task.CompletedTask;
+    }
+
     public Task<bool> DeleteAsync(string id) =>
         Task.FromResult(store.Tournaments.TryRemove(id, out _));
 }

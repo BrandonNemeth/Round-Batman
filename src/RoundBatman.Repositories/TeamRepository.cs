@@ -16,6 +16,12 @@ public class TeamRepository(InMemoryDataStore store) : ITeamRepository
         return Task.FromResult(team);
     }
 
+    public Task UpdateAsync(Team team)
+    {
+        store.Teams[team.Id] = team;
+        return Task.CompletedTask;
+    }
+
     public Task<bool> DeleteAsync(string id) =>
         Task.FromResult(store.Teams.TryRemove(id, out _));
 }
