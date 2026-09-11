@@ -11,17 +11,85 @@ namespace RoundBatman.Delegates.Tests;
 public class MatchDelegateTests
 {
     [Fact]
-    public async Task CreateAsync_BuildsMatch_AndPersists()
+    public async Task CreateAsync_WithValidTeamsInGroup_BuildsMatch_AndPersists()
     {
+        var group = new Group
+        {
+            Id = "g1",
+            Teams = new List<Team> { new() { Id = "t1", Name = "A" }, new() { Id = "t2", Name = "B" } },
+        };
+        var groupRepo = new Mock<IGroupRepository>();
+        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+
         var matchRepo = new Mock<IMatchRepository>();
         matchRepo.Setup(r => r.AddAsync("tour1", It.IsAny<DomainMatch>())).ReturnsAsync((string _, DomainMatch m) => m);
-        var groupRepo = new Mock<IGroupRepository>();
+
         var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
 
         var result = await sut.CreateAsync("tour1", "g1", "t1", "t2");
 
         result.HomeTeamId.Should().Be("t1");
         result.VisitorTeamId.Should().Be("t2");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithoutGroupId_TeamsInAnyTournamentGroup_BuildsMatch()
+    {
+        var group = new Group
+        {
+            Id = "g1",
+            Teams = new List<Team> { new() { Id = "t1", Name = "A" }, new() { Id = "t2", Name = "B" } },
+        };
+        var groupRepo = new Mock<IGroupRepository>();
+        groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group> { group });
+
+        var matchRepo = new Mock<IMatchRepository>();
+        matchRepo.Setup(r => r.AddAsync("tour1", It.IsAny<DomainMatch>())).ReturnsAsync((string _, DomainMatch m) => m);
+
+        var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
+
+        var result = await sut.CreateAsync("tour1", null, "t1", "t2");
+
+        result.HomeTeamId.Should().Be("t1");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithSameHomeAndVisitorTeam_ThrowsBusinessRuleException()
+    {
+        var groupRepo = new Mock<IGroupRepository>();
+        var matchRepo = new Mock<IMatchRepository>();
+        var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
+
+        var act = async () => await sut.CreateAsync("tour1", null, "t1", "t1");
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithTeamNotInSpecifiedGroup_ThrowsBusinessRuleException()
+    {
+        var group = new Group { Id = "g1", Teams = new List<Team> { new() { Id = "t1", Name = "A" } } };
+        var groupRepo = new Mock<IGroupRepository>();
+        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        var matchRepo = new Mock<IMatchRepository>();
+        var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
+
+        var act = async () => await sut.CreateAsync("tour1", "g1", "t1", "t2");
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithTeamsNotInAnyTournamentGroup_ThrowsBusinessRuleException()
+    {
+        var groupRepo = new Mock<IGroupRepository>();
+        groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group>());
+        var matchRepo = new Mock<IMatchRepository>();
+        var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
+
+        var act = async () => await sut.CreateAsync("tour1", null, "t1", "t2");
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
     }
 
     [Fact]
@@ -58,13 +126,13 @@ public class MatchDelegateTests
         var group = new Group
         {
             Id = "g1",
-            Teams =
-            [
-                new Team { Id = "t1", Name = "A" },
-                new Team { Id = "t2", Name = "B" },
-                new Team { Id = "t3", Name = "C" },
-                new Team { Id = "t4", Name = "D" },
-            ],
+            Teams = new List<Team>
+            {
+                new() { Id = "t1", Name = "A" },
+                new() { Id = "t2", Name = "B" },
+                new() { Id = "t3", Name = "C" },
+                new() { Id = "t4", Name = "D" },
+            },
         };
         var groupRepo = new Mock<IGroupRepository>();
         groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
@@ -84,7 +152,7 @@ public class MatchDelegateTests
     [Fact]
     public async Task GenerateRoundRobinMatchesAsync_WithLessThanTwoTeams_ThrowsBusinessRuleException()
     {
-        var group = new Group { Id = "g1", Teams = [new Team { Id = "t1", Name = "A" }] };
+        var group = new Group { Id = "g1", Teams = new List<Team> { new() { Id = "t1", Name = "A" } } };
         var groupRepo = new Mock<IGroupRepository>();
         groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
         var matchRepo = new Mock<IMatchRepository>();
@@ -102,7 +170,7 @@ public class MatchDelegateTests
         var group = new Group
         {
             Id = "g1",
-            Teams = [new Team { Id = "t1", Name = "A" }, new Team { Id = "t2", Name = "B" }],
+            Teams = new List<Team> { new() { Id = "t1", Name = "A" }, new() { Id = "t2", Name = "B" } },
         };
         var groupRepo = new Mock<IGroupRepository>();
         groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);

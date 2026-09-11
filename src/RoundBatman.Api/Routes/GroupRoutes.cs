@@ -1,6 +1,6 @@
 using RoundBatman.Api.Dtos;
+using RoundBatman.Api.Extensions;
 using RoundBatman.Delegates;
-using RoundBatman.Domain.Exceptions;
 
 namespace RoundBatman.Api.Routes;
 
@@ -23,21 +23,16 @@ public static class GroupRoutes
         {
             var created = await groupDelegate.CreateAsync(tournamentId, dto.Name);
             return Results.Created($"/tournaments/{tournamentId}/groups/{created.Id}", created.ToDto());
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<CreateGroupDto>>();
 
         group.MapPut("/{groupId}", async (
             string tournamentId, string groupId, UpdateGroupDto dto, IGroupDelegate groupDelegate) =>
         {
-            try
-            {
-                var updated = await groupDelegate.UpdateAsync(tournamentId, groupId, dto.Name);
-                return Results.Ok(updated.ToDto());
-            }
-            catch (NotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
+            var updated = await groupDelegate.UpdateAsync(tournamentId, groupId, dto.Name);
+            return Results.Ok(updated.ToDto());
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateGroupDto>>();
 
         group.MapDelete("/{groupId}", async (string tournamentId, string groupId, IGroupDelegate groupDelegate) =>
             await groupDelegate.DeleteAsync(tournamentId, groupId) ? Results.NoContent() : Results.NotFound());
@@ -45,33 +40,16 @@ public static class GroupRoutes
         group.MapPatch("/{groupId}/teams", async (
             string tournamentId, string groupId, AssignTeamsDto dto, IGroupDelegate groupDelegate) =>
         {
-            try
-            {
-                var updated = await groupDelegate.AssignTeamsAsync(tournamentId, groupId, dto.TeamIds);
-                return Results.Ok(updated.ToDto());
-            }
-            catch (NotFoundException ex)
-            {
-                return Results.NotFound(new { error = ex.Message });
-            }
-        });
+            await groupDelegate.AssignTeamsAsync(tournamentId, groupId, dto.TeamIds);
+            return Results.NoContent();
+        })
+        .AddEndpointFilter<ValidationFilter<AssignTeamsDto>>();
 
         group.MapPost("/{groupId}/generate-matches", async (
             string tournamentId, string groupId, IMatchDelegate matchDelegate) =>
         {
-            try
-            {
-                var matches = await matchDelegate.GenerateRoundRobinMatchesAsync(tournamentId, groupId);
-                return Results.Created($"/tournaments/{tournamentId}/matches", matches.Select(m => m.ToDto()));
-            }
-            catch (NotFoundException ex)
-            {
-                return Results.NotFound(new { error = ex.Message });
-            }
-            catch (BusinessRuleException ex)
-            {
-                return Results.UnprocessableEntity(new { error = ex.Message });
-            }
+            var matches = await matchDelegate.GenerateRoundRobinMatchesAsync(tournamentId, groupId);
+            return Results.Created($"/tournaments/{tournamentId}/matches", matches.Select(m => m.ToDto()));
         });
     }
 }

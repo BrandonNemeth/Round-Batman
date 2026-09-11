@@ -12,8 +12,29 @@ public class MatchDelegate(IMatchRepository matchRepository, IGroupRepository gr
     public Task<Match?> GetByIdAsync(string tournamentId, string matchId) =>
         matchRepository.GetByIdAsync(tournamentId, matchId);
 
-    public Task<Match> CreateAsync(string tournamentId, string? groupId, string homeTeamId, string visitorTeamId)
+    public async Task<Match> CreateAsync(string tournamentId, string? groupId, string homeTeamId, string visitorTeamId)
     {
+        if (homeTeamId == visitorTeamId)
+            throw new BusinessRuleException("A team cannot play against itself.");
+
+        if (groupId is not null)
+        {
+            var group = await groupRepository.GetByIdAsync(tournamentId, groupId)
+                ?? throw new NotFoundException($"Group {groupId} not found in tournament {tournamentId}.");
+
+            var groupTeamIds = group.Teams.Select(t => t.Id).ToHashSet();
+            if (!groupTeamIds.Contains(homeTeamId) || !groupTeamIds.Contains(visitorTeamId))
+                throw new BusinessRuleException("Both teams must belong to the specified group.");
+        }
+        else
+        {
+            var allGroups = await groupRepository.GetAllAsync(tournamentId);
+            var tournamentTeamIds = allGroups.SelectMany(g => g.Teams).Select(t => t.Id).ToHashSet();
+
+            if (!tournamentTeamIds.Contains(homeTeamId) || !tournamentTeamIds.Contains(visitorTeamId))
+                throw new BusinessRuleException("Both teams must belong to a group in this tournament.");
+        }
+
         var match = new Match
         {
             Id = Guid.NewGuid().ToString(),
@@ -22,7 +43,7 @@ public class MatchDelegate(IMatchRepository matchRepository, IGroupRepository gr
             HomeTeamId = homeTeamId,
             VisitorTeamId = visitorTeamId,
         };
-        return matchRepository.AddAsync(tournamentId, match);
+        return await matchRepository.AddAsync(tournamentId, match);
     }
 
     public Task<bool> DeleteAsync(string tournamentId, string matchId) =>

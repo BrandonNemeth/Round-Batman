@@ -1,6 +1,6 @@
 using RoundBatman.Api.Dtos;
+using RoundBatman.Api.Extensions;
 using RoundBatman.Delegates;
-using RoundBatman.Domain.Exceptions;
 
 namespace RoundBatman.Api.Routes;
 
@@ -23,20 +23,15 @@ public static class TeamRoutes
         {
             var team = await teamDelegate.CreateAsync(dto.Name);
             return Results.Created($"/teams/{team.Id}", team.ToDto());
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<CreateTeamDto>>();
 
         group.MapPut("/{id}", async (string id, UpdateTeamDto dto, ITeamDelegate teamDelegate) =>
         {
-            try
-            {
-                var updated = await teamDelegate.UpdateAsync(id, dto.Name);
-                return Results.Ok(updated.ToDto());
-            }
-            catch (NotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
+            var updated = await teamDelegate.UpdateAsync(id, dto.Name);
+            return Results.Ok(updated.ToDto());
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateTeamDto>>();
 
         group.MapDelete("/{id}", async (string id, ITeamDelegate teamDelegate) =>
             await teamDelegate.DeleteAsync(id) ? Results.NoContent() : Results.NotFound());

@@ -1,6 +1,6 @@
 using RoundBatman.Api.Dtos;
+using RoundBatman.Api.Extensions;
 using RoundBatman.Delegates;
-using RoundBatman.Domain.Exceptions;
 
 namespace RoundBatman.Api.Routes;
 
@@ -23,21 +23,16 @@ public static class MatchRoutes
         {
             var match = await matchDelegate.CreateAsync(tournamentId, dto.GroupId, dto.HomeTeamId, dto.VisitorTeamId);
             return Results.Created($"/tournaments/{tournamentId}/matches/{match.Id}", match.ToDto());
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<CreateMatchDto>>();
 
         group.MapPatch("/{matchId}/score", async (
             string tournamentId, string matchId, UpdateScoreDto dto, IMatchDelegate matchDelegate) =>
         {
-            try
-            {
-                var updated = await matchDelegate.UpdateScoreAsync(tournamentId, matchId, dto.HomeTeamScore, dto.VisitorTeamScore);
-                return Results.Ok(updated.ToDto());
-            }
-            catch (NotFoundException ex)
-            {
-                return Results.NotFound(new { error = ex.Message });
-            }
-        });
+            var updated = await matchDelegate.UpdateScoreAsync(tournamentId, matchId, dto.HomeTeamScore, dto.VisitorTeamScore);
+            return Results.Ok(updated.ToDto());
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateScoreDto>>();
 
         group.MapDelete("/{matchId}", async (string tournamentId, string matchId, IMatchDelegate matchDelegate) =>
             await matchDelegate.DeleteAsync(tournamentId, matchId) ? Results.NoContent() : Results.NotFound());
