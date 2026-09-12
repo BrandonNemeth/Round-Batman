@@ -18,10 +18,20 @@ public record TournamentDto(
 
 public static class TournamentMapper
 {
-    public static TournamentDto ToDto(this RoundBatman.Domain.Tournament tournament) => new(
-        tournament.Id,
-        tournament.Name,
-        new TournamentFormatDto(tournament.Format.Type, tournament.Format.NumberOfGroups, tournament.Format.MaxTeamsPerGroup),
-        tournament.Groups.Select(g => g.ToDto()).ToList(),
-        tournament.Matches.Select(m => m.ToDto()).ToList());
+    public static TournamentDto ToDto(this RoundBatman.Domain.Tournament tournament)
+    {
+        var teamsById = tournament.Groups
+            .SelectMany(g => g.Teams)
+            .GroupBy(t => t.Id)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        return new(
+            tournament.Id,
+            tournament.Name,
+            new TournamentFormatDto(tournament.Format.Type, tournament.Format.NumberOfGroups, tournament.Format.MaxTeamsPerGroup),
+            tournament.Groups.Select(g => g.ToDto()).ToList(),
+            tournament.Matches.Select(m => m.ToDto(
+                teamsById.GetValueOrDefault(m.HomeTeamId),
+                teamsById.GetValueOrDefault(m.VisitorTeamId))).ToList());
+    }
 }

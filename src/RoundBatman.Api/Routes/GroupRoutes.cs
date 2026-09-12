@@ -46,10 +46,18 @@ public static class GroupRoutes
         .AddEndpointFilter<ValidationFilter<AssignTeamsDto>>();
 
         group.MapPost("/{groupId}/generate-matches", async (
-            string tournamentId, string groupId, IMatchDelegate matchDelegate) =>
+            string tournamentId, string groupId, IMatchDelegate matchDelegate, IGroupDelegate groupDelegateForTeams) =>
         {
             var matches = await matchDelegate.GenerateRoundRobinMatchesAsync(tournamentId, groupId);
-            return Results.Created($"/tournaments/{tournamentId}/matches", matches.Select(m => m.ToDto()));
+
+            var groupWithTeams = await groupDelegateForTeams.GetByIdAsync(tournamentId, groupId);
+            var teamsById = (groupWithTeams?.Teams ?? [])
+                .GroupBy(t => t.Id)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            return Results.Created(
+                $"/tournaments/{tournamentId}/matches",
+                matches.Select(m => m.ToDto(teamsById.GetValueOrDefault(m.HomeTeamId), teamsById.GetValueOrDefault(m.VisitorTeamId))));
         });
     }
 }

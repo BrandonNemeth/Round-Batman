@@ -63,7 +63,7 @@ public class PatchTournamentDtoValidator : AbstractValidator<PatchTournamentDto>
             .When(x => x.Name is not null)
             .WithMessage("Tournament name cannot be empty when provided.");
 
-        RuleFor(x => x.Format)
+        RuleFor(x => x.Format!)
             .SetValidator(new PatchTournamentFormatDtoValidator())
             .When(x => x.Format is not null);
     }
