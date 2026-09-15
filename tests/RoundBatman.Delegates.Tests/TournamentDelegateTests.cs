@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using RoundBatman.Domain;
 using RoundBatman.Domain.Enums;
+using RoundBatman.Domain.Exceptions;
 using RoundBatman.Repositories;
 using Xunit;
 
@@ -46,5 +47,34 @@ public class TournamentDelegateTests
         var result = await sut.DeleteAsync("t1");
 
         result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PatchAsync_CannotReduceNumberOfGroupsBelowExistingCount()
+    {
+        var tournament = new Tournament
+        {
+            Id = "t1",
+            Name = "Copa Arkham",
+            Format = new TournamentFormat
+            {
+                Type = TournamentType.ROUND_ROBIN,
+                NumberOfGroups = 2,
+                MaxTeamsPerGroup = 4,
+            },
+            Groups =
+            [
+                new Group { Id = "g1", TournamentId = "t1" },
+                new Group { Id = "g2", TournamentId = "t1" },
+            ],
+        };
+        var repoMock = new Mock<ITournamentRepository>();
+        repoMock.Setup(r => r.GetByIdAsync("t1")).ReturnsAsync(tournament);
+        var sut = new TournamentDelegate(repoMock.Object);
+
+        var act = async () => await sut.PatchAsync("t1", null, null, 1, null);
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+        repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tournament>()), Times.Never);
     }
 }

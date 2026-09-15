@@ -126,10 +126,16 @@ function renderTournamentsTable() {
   empty.hidden = true;
 
   for (const t of state.tournaments) {
+    const statusLabels = {
+      NOT_STARTED: "No iniciado",
+      IN_PROGRESS: "En progreso",
+      FINISHED: "Finalizado",
+    };
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${escapeHtml(t.name)}</td>
       <td>${t.format?.type ?? "-"}</td>
+      <td>${statusLabels[t.status] ?? t.status ?? "-"}</td>
       <td class="num">${t.groups?.length ?? 0}</td>
       <td class="num">${t.matches?.length ?? 0}</td>
       <td><button class="btn btn-danger btn-small" data-action="delete-tournament" data-id="${t.id}">Eliminar</button></td>
@@ -320,6 +326,7 @@ async function handleGenerateMatches(groupId) {
   );
   if (ok) {
     showToast(`Calendario generado: ${ok.length} partidos creados`);
+    await loadTournaments();
     switchView("matches");
     document.getElementById("match-tournament-select").value = state.selectedTournamentId;
     await loadMatches();
@@ -432,6 +439,7 @@ async function handleCreateMatch(e) {
   if (created) {
     showToast("Partido creado");
     await loadMatches();
+    await loadTournaments();
   }
 }
 
@@ -453,6 +461,7 @@ async function handleSaveScore(matchId) {
   if (ok) {
     showToast("Marcador actualizado");
     await loadMatches();
+    await loadTournaments();
   }
 }
 
@@ -462,6 +471,7 @@ async function handleDeleteMatch(matchId) {
     "No se pudo eliminar el partido"
   );
   await loadMatches();
+  await loadTournaments();
 }
 
 // --- Helpers ---

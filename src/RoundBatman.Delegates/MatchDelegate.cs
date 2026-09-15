@@ -19,7 +19,7 @@ public class MatchDelegate(IMatchRepository matchRepository, IGroupRepository gr
 
         if (groupId is not null)
         {
-            var group = await groupRepository.GetByIdAsync(tournamentId, groupId)
+            var group = await groupRepository.GetByIdAsync(new GroupRepositoryKey(tournamentId, groupId))
                 ?? throw new NotFoundException($"Group {groupId} not found in tournament {tournamentId}.");
 
             var groupTeamIds = group.Teams.Select(t => t.Id).ToHashSet();
@@ -61,7 +61,7 @@ public class MatchDelegate(IMatchRepository matchRepository, IGroupRepository gr
 
     public async Task<List<Match>> GenerateRoundRobinMatchesAsync(string tournamentId, string groupId)
     {
-        var group = await groupRepository.GetByIdAsync(tournamentId, groupId)
+        var group = await groupRepository.GetByIdAsync(new GroupRepositoryKey(tournamentId, groupId))
             ?? throw new NotFoundException($"Group {groupId} not found in tournament {tournamentId}.");
 
         if (group.Teams.Count < 2)

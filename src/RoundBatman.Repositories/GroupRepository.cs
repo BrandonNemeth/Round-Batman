@@ -12,28 +12,27 @@ public class GroupRepository(InMemoryDataStore store) : IGroupRepository
     public Task<List<Group>> GetAllAsync(string tournamentId) =>
         Task.FromResult(GetTournamentOrThrow(tournamentId).Groups);
 
-    public Task<Group?> GetByIdAsync(string tournamentId, string groupId) =>
-        Task.FromResult(GetTournamentOrThrow(tournamentId).Groups
-            .FirstOrDefault(g => g.Id == groupId));
+    public Task<Group?> GetByIdAsync(GroupRepositoryKey key) =>
+        Task.FromResult(GetTournamentOrThrow(key.TournamentId).Groups
+            .FirstOrDefault(g => g.Id == key.GroupId));
 
-    public Task<Group> AddAsync(string tournamentId, Group group)
+    public Task<Group> AddAsync(Group group)
     {
-        var tournament = GetTournamentOrThrow(tournamentId);
-        group.TournamentId = tournamentId;
+        var tournament = GetTournamentOrThrow(group.TournamentId);
         tournament.Groups.Add(group);
         return Task.FromResult(group);
     }
 
-    public Task<bool> DeleteAsync(string tournamentId, string groupId)
+    public Task<bool> DeleteAsync(GroupRepositoryKey key)
     {
-        var tournament = GetTournamentOrThrow(tournamentId);
-        var removed = tournament.Groups.RemoveAll(g => g.Id == groupId) > 0;
+        var tournament = GetTournamentOrThrow(key.TournamentId);
+        var removed = tournament.Groups.RemoveAll(g => g.Id == key.GroupId) > 0;
         return Task.FromResult(removed);
     }
 
-    public Task UpdateAsync(string tournamentId, Group group)
+    public Task UpdateAsync(Group group)
     {
-        var tournament = GetTournamentOrThrow(tournamentId);
+        var tournament = GetTournamentOrThrow(group.TournamentId);
         var index = tournament.Groups.FindIndex(g => g.Id == group.Id);
         if (index >= 0) tournament.Groups[index] = group;
         return Task.CompletedTask;

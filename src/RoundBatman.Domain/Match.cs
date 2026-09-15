@@ -10,5 +10,7 @@ public class Match
     public Score Score { get; set; } = new();
 
     public Enums.Winner? Winner => Score.GetWinner();
-    public bool IsCompleted => Score.GetWinner() is not null || Score.HomeTeamScore != Score.VisitorTeamScore;
+    // Score.IsCompleted distingue un empate registrado (incluso 0-0)
+    // de un partido que todavía no tiene resultado.
+    public bool IsCompleted => Score.IsCompleted;
 }

@@ -32,6 +32,8 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
         var tournament = await tournamentRepository.GetByIdAsync(id)
             ?? throw new NotFoundException($"Tournament {id} not found.");
 
+        EnsureGroupCapacityIsValid(tournament, numberOfGroups);
+
         tournament.Name = name;
         tournament.Format = new TournamentFormat
         {
@@ -56,7 +58,10 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
             tournament.Format.Type = type.Value;
 
         if (numberOfGroups is not null)
+        {
+            EnsureGroupCapacityIsValid(tournament, numberOfGroups.Value);
             tournament.Format.NumberOfGroups = numberOfGroups.Value;
+        }
 
         if (maxTeamsPerGroup is not null)
             tournament.Format.MaxTeamsPerGroup = maxTeamsPerGroup.Value;
@@ -66,4 +71,11 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
     }
 
     public Task<bool> DeleteAsync(string id) => tournamentRepository.DeleteAsync(id);
+
+    private static void EnsureGroupCapacityIsValid(Tournament tournament, int numberOfGroups)
+    {
+        if (numberOfGroups < tournament.Groups.Count)
+            throw new BusinessRuleException(
+                $"Number of groups cannot be less than the {tournament.Groups.Count} existing groups.");
+    }
 }

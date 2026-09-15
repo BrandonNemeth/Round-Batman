@@ -12,6 +12,7 @@ public record PatchTournamentDto(string? Name, PatchTournamentFormatDto? Format)
 public record TournamentDto(
     string Id,
     string Name,
+    TournamentStatus Status,
     TournamentFormatDto Format,
     List<GroupDto> Groups,
     List<MatchDto> Matches);
@@ -28,6 +29,7 @@ public static class TournamentMapper
         return new(
             tournament.Id,
             tournament.Name,
+            tournament.Status,
             new TournamentFormatDto(tournament.Format.Type, tournament.Format.NumberOfGroups, tournament.Format.MaxTeamsPerGroup),
             tournament.Groups.Select(g => g.ToDto()).ToList(),
             tournament.Matches.Select(m => m.ToDto(

@@ -19,7 +19,7 @@ public class MatchDelegateTests
             Teams = new List<Team> { new() { Id = "t1", Name = "A" }, new() { Id = "t2", Name = "B" } },
         };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
 
         var matchRepo = new Mock<IMatchRepository>();
         matchRepo.Setup(r => r.AddAsync("tour1", It.IsAny<DomainMatch>())).ReturnsAsync((string _, DomainMatch m) => m);
@@ -70,7 +70,7 @@ public class MatchDelegateTests
     {
         var group = new Group { Id = "g1", Teams = new List<Team> { new() { Id = "t1", Name = "A" } } };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
         var matchRepo = new Mock<IMatchRepository>();
         var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
 
@@ -135,7 +135,7 @@ public class MatchDelegateTests
             },
         };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
 
         var matchRepo = new Mock<IMatchRepository>();
         matchRepo.Setup(r => r.GetByGroupAsync("tour1", "g1")).ReturnsAsync(new List<DomainMatch>());
@@ -154,7 +154,7 @@ public class MatchDelegateTests
     {
         var group = new Group { Id = "g1", Teams = new List<Team> { new() { Id = "t1", Name = "A" } } };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
         var matchRepo = new Mock<IMatchRepository>();
 
         var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);
@@ -173,7 +173,7 @@ public class MatchDelegateTests
             Teams = new List<Team> { new() { Id = "t1", Name = "A" }, new() { Id = "t2", Name = "B" } },
         };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
 
         var matchRepo = new Mock<IMatchRepository>();
         matchRepo.Setup(r => r.GetByGroupAsync("tour1", "g1"))
@@ -190,7 +190,7 @@ public class MatchDelegateTests
     public async Task GenerateRoundRobinMatchesAsync_WithMissingGroup_ThrowsNotFoundException()
     {
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "missing")).ReturnsAsync((Group?)null);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "missing"))).ReturnsAsync((Group?)null);
         var matchRepo = new Mock<IMatchRepository>();
 
         var sut = new MatchDelegate(matchRepo.Object, groupRepo.Object);

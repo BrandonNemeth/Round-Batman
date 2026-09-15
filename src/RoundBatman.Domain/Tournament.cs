@@ -16,4 +16,21 @@ public class Tournament
     public TournamentFormat Format { get; set; } = new();
     public List<Group> Groups { get; set; } = [];
     public List<Match> Matches { get; set; } = [];
+
+    public TournamentStatus Status
+    {
+        get
+        {
+            if (Matches.Count == 0)
+                return TournamentStatus.NOT_STARTED;
+
+            var hasEveryConfiguredGroup = Groups.Count == Format.NumberOfGroups;
+            var everyGroupHasMatches = Groups.All(group =>
+                Matches.Any(match => match.GroupId == group.Id));
+
+            return hasEveryConfiguredGroup && everyGroupHasMatches && Matches.All(match => match.IsCompleted)
+                ? TournamentStatus.FINISHED
+                : TournamentStatus.IN_PROGRESS;
+        }
+    }
 }

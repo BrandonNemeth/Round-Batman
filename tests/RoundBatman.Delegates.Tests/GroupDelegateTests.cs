@@ -10,11 +10,11 @@ namespace RoundBatman.Delegates.Tests;
 
 public class GroupDelegateTests
 {
-    private static Tournament MakeTournament(int maxTeamsPerGroup = 10) => new()
+    private static Tournament MakeTournament(int maxTeamsPerGroup = 10, int numberOfGroups = 1) => new()
     {
         Id = "tour1",
         Name = "Copa Arkham",
-        Format = new TournamentFormat { Type = TournamentType.ROUND_ROBIN, NumberOfGroups = 1, MaxTeamsPerGroup = maxTeamsPerGroup },
+        Format = new TournamentFormat { Type = TournamentType.ROUND_ROBIN, NumberOfGroups = numberOfGroups, MaxTeamsPerGroup = maxTeamsPerGroup },
     };
 
     [Fact]
@@ -22,9 +22,10 @@ public class GroupDelegateTests
     {
         var groupRepo = new Mock<IGroupRepository>();
         groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group>());
-        groupRepo.Setup(r => r.AddAsync("tour1", It.IsAny<Group>())).ReturnsAsync((string _, Group g) => g);
+        groupRepo.Setup(r => r.AddAsync(It.IsAny<Group>())).ReturnsAsync((Group g) => g);
         var teamRepo = new Mock<ITeamRepository>();
         var tournamentRepo = new Mock<ITournamentRepository>();
+        tournamentRepo.Setup(r => r.GetByIdAsync("tour1")).ReturnsAsync(MakeTournament());
         var sut = new GroupDelegate(groupRepo.Object, teamRepo.Object, tournamentRepo.Object);
 
         var result = await sut.CreateAsync("tour1", "Grupo A");
@@ -41,6 +42,7 @@ public class GroupDelegateTests
             .ReturnsAsync(new List<Group> { new() { Id = "g1", Name = "Grupo A" } });
         var teamRepo = new Mock<ITeamRepository>();
         var tournamentRepo = new Mock<ITournamentRepository>();
+        tournamentRepo.Setup(r => r.GetByIdAsync("tour1")).ReturnsAsync(MakeTournament());
         var sut = new GroupDelegate(groupRepo.Object, teamRepo.Object, tournamentRepo.Object);
 
         var act = async () => await sut.CreateAsync("tour1", "Grupo A");
@@ -49,11 +51,30 @@ public class GroupDelegateTests
     }
 
     [Fact]
+    public async Task CreateAsync_WhenMaximumNumberOfGroupsReached_ThrowsBusinessRuleException()
+    {
+        var existingGroup = new Group { Id = "g1", Name = "Grupo A", TournamentId = "tour1" };
+        var groupRepo = new Mock<IGroupRepository>();
+        groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group> { existingGroup });
+        var teamRepo = new Mock<ITeamRepository>();
+        var tournamentRepo = new Mock<ITournamentRepository>();
+        tournamentRepo.Setup(r => r.GetByIdAsync("tour1"))
+            .ReturnsAsync(MakeTournament(numberOfGroups: 1));
+        var sut = new GroupDelegate(groupRepo.Object, teamRepo.Object, tournamentRepo.Object);
+
+        var act = async () => await sut.CreateAsync("tour1", "Grupo B");
+
+        await act.Should().ThrowAsync<BusinessRuleException>()
+            .WithMessage("*cannot have more than 1 groups*");
+        groupRepo.Verify(r => r.AddAsync(It.IsAny<Group>()), Times.Never);
+    }
+
+    [Fact]
     public async Task AssignTeamsAsync_WithValidTeams_UpdatesGroup()
     {
         var group = new Group { Id = "g1", Name = "Grupo A", TournamentId = "tour1" };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
         groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group> { group });
 
         var teamRepo = new Mock<ITeamRepository>();
@@ -68,14 +89,14 @@ public class GroupDelegateTests
         var result = await sut.AssignTeamsAsync("tour1", "g1", new List<string> { "t1", "t2" });
 
         result.Teams.Should().HaveCount(2);
-        groupRepo.Verify(r => r.UpdateAsync("tour1", It.IsAny<Group>()), Times.Once);
+        groupRepo.Verify(r => r.UpdateAsync(It.IsAny<Group>()), Times.Once);
     }
 
     [Fact]
     public async Task AssignTeamsAsync_WithMissingGroup_ThrowsNotFoundException()
     {
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "missing")).ReturnsAsync((Group?)null);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "missing"))).ReturnsAsync((Group?)null);
         var teamRepo = new Mock<ITeamRepository>();
         var tournamentRepo = new Mock<ITournamentRepository>();
         var sut = new GroupDelegate(groupRepo.Object, teamRepo.Object, tournamentRepo.Object);
@@ -90,7 +111,7 @@ public class GroupDelegateTests
     {
         var group = new Group { Id = "g1", Name = "Grupo A" };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
         groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group> { group });
 
         var teamRepo = new Mock<ITeamRepository>();
@@ -111,7 +132,7 @@ public class GroupDelegateTests
     {
         var group = new Group { Id = "g1", Name = "Grupo A" };
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(group);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(group);
 
         var teamRepo = new Mock<ITeamRepository>();
         var tournamentRepo = new Mock<ITournamentRepository>();
@@ -136,7 +157,7 @@ public class GroupDelegateTests
         };
 
         var groupRepo = new Mock<IGroupRepository>();
-        groupRepo.Setup(r => r.GetByIdAsync("tour1", "g1")).ReturnsAsync(targetGroup);
+        groupRepo.Setup(r => r.GetByIdAsync(new GroupRepositoryKey("tour1", "g1"))).ReturnsAsync(targetGroup);
         groupRepo.Setup(r => r.GetAllAsync("tour1")).ReturnsAsync(new List<Group> { targetGroup, otherGroup });
 
         var teamRepo = new Mock<ITeamRepository>();
