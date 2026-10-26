@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using RoundBatman.Api.Dtos;
 using RoundBatman.Api.Extensions;
 using RoundBatman.Api.Routes;
@@ -29,14 +30,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Almacén en memoria (Singleton: un solo estado compartido durante la vida de la app)
-builder.Services.AddSingleton<InMemoryDataStore>();
+builder.Services.AddDbContext<RoundBatmanDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("RoundBatman")));
 
 // Repositories
-builder.Services.AddScoped<ITeamRepository, TeamRepository>();
-builder.Services.AddScoped<ITournamentRepository, TournamentRepository>();
-builder.Services.AddScoped<IGroupRepository, GroupRepository>();
-builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<ITeamRepository, PostgresTeamRepository>();
+builder.Services.AddScoped<ITournamentRepository, PostgresTournamentRepository>();
+builder.Services.AddScoped<IGroupRepository, PostgresGroupRepository>();
+builder.Services.AddScoped<IMatchRepository, PostgresMatchRepository>();
 
 // Delegates
 builder.Services.AddScoped<ITeamDelegate, TeamDelegate>();
