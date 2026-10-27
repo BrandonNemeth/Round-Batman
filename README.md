@@ -56,7 +56,7 @@ cp .env.example .env
 Edit `.env`, then start both containers:
 
 ```bash
-podman compose up --build
+podman-compose up --build -d
 ```
 
 The API will be available at `http://localhost:8080`. The API container waits
