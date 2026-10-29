@@ -197,6 +197,24 @@ button, input, select {
   outline-offset: 1px;
 }
 
+.assign-row select {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+.assign-row select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.assign-row select option {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
 .btn {
   border: none;
   border-radius: var(--radius);
@@ -319,6 +337,87 @@ button, input, select {
 }
 
 .assign-row select { flex: 1; }
+
+/* Elimination board */
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.panel-heading h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.panel-heading p {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 0;
+}
+
+.elimination-board {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+}
+
+.elimination-round {
+  min-width: 190px;
+  flex: 1;
+}
+
+.elimination-round h3 {
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.elimination-match {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  padding: 8px;
+}
+
+.elimination-team {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.elimination-team + .elimination-team {
+  border-top: 1px solid var(--line);
+}
+
+.elimination-team.winner {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.elimination-team strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.elimination-status {
+  color: var(--text-dim);
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+  padding: 0 6px;
+}
 
 /* Toast */
 .toast {

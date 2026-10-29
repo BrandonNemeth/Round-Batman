@@ -141,7 +141,7 @@
       <section id="view-matches" class="view">
         <header class="view-header">
           <h1>Partidos</h1>
-          <p>Programa enfrentamientos y captura resultados.</p>
+          <p>Programa enfrentamientos, captura resultados y consulta el tablero de eliminación.</p>
         </header>
 
         <div class="panel">
@@ -181,6 +181,19 @@
             <tbody></tbody>
           </table>
           <p class="empty-state" id="matches-empty" hidden>Este torneo no tiene partidos todavía.</p>
+        </div>
+
+        <div class="panel elimination-panel" id="elimination-panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2>Tablero de eliminación</h2>
+              <p>Los partidos sin grupo se muestran en el orden de creación.</p>
+            </div>
+          </div>
+          <div class="elimination-board" id="elimination-board"></div>
+          <p class="empty-state" id="elimination-empty" hidden>
+            Este torneo todavía no tiene partidos de eliminación.
+          </p>
         </div>
       </section>
     </main>

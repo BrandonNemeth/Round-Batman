@@ -347,6 +347,80 @@ async function loadMatches() {
   );
   state.matches = matches || [];
   renderMatchesTable();
+  renderEliminationBoard();
+}
+
+function selectedTournament() {
+  return state.tournaments.find((t) => t.id === state.selectedTournamentId);
+}
+
+function isEliminationTournament() {
+  return selectedTournament()?.format?.type === "NFL";
+}
+
+function matchTeamName(match, side) {
+  const team = match[side === "home" ? "homeTeam" : "visitorTeam"];
+  return team?.name || teamName(match[side === "home" ? "homeTeamId" : "visitorTeamId"]);
+}
+
+function renderEliminationBoard() {
+  const panel = document.getElementById("elimination-panel");
+  const board = document.getElementById("elimination-board");
+  const empty = document.getElementById("elimination-empty");
+  board.innerHTML = "";
+
+  if (!isEliminationTournament()) {
+    panel.hidden = true;
+    return;
+  }
+
+  panel.hidden = false;
+  const eliminationMatches = state.matches.filter((match) => !match.groupId);
+  if (eliminationMatches.length === 0) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  const roundCount = Math.max(1, Math.ceil(Math.log2(eliminationMatches.length + 1)));
+  let offset = 0;
+  for (let round = 0; round < roundCount && offset < eliminationMatches.length; round++) {
+    const matchesInRound = Math.min(2 ** (roundCount - round - 1), eliminationMatches.length - offset);
+    const column = document.createElement("section");
+    column.className = "elimination-round";
+    column.innerHTML = `<h3>${roundLabel(round, roundCount)}</h3>`;
+
+    for (const match of eliminationMatches.slice(offset, offset + matchesInRound)) {
+      const homeName = matchTeamName(match, "home");
+      const visitorName = matchTeamName(match, "visitor");
+      const homeScore = match.score?.homeTeamScore ?? 0;
+      const visitorScore = match.score?.visitorTeamScore ?? 0;
+      const homeWinner = match.winner === "HOME";
+      const visitorWinner = match.winner === "VISITOR";
+      const card = document.createElement("article");
+      card.className = "elimination-match";
+      card.innerHTML = `
+        <div class="${homeWinner ? "elimination-team winner" : "elimination-team"}">
+          <span>${escapeHtml(homeName)}</span><strong>${homeScore}</strong>
+        </div>
+        <div class="${visitorWinner ? "elimination-team winner" : "elimination-team"}">
+          <span>${escapeHtml(visitorName)}</span><strong>${visitorScore}</strong>
+        </div>
+        <span class="elimination-status">${match.winner ? "Finalizado" : "Pendiente"}</span>
+      `;
+      column.appendChild(card);
+    }
+
+    board.appendChild(column);
+    offset += matchesInRound;
+  }
+}
+
+function roundLabel(round, roundCount) {
+  if (round === roundCount - 1) return "Final";
+  if (round === roundCount - 2) return "Semifinal";
+  if (round === roundCount - 3) return "Cuartos de final";
+  return `Ronda ${round + 1}`;
 }
 
 function teamName(teamId) {
@@ -361,6 +435,7 @@ function renderMatchesTable() {
 
   if (!state.selectedTournamentId || state.matches.length === 0) {
     empty.hidden = false;
+    renderEliminationBoard();
     return;
   }
   empty.hidden = true;
