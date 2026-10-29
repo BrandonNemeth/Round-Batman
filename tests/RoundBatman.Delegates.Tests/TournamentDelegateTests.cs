@@ -17,11 +17,11 @@ public class TournamentDelegateTests
         repoMock.Setup(r => r.AddAsync(It.IsAny<Tournament>())).ReturnsAsync((Tournament t) => t);
         var sut = new TournamentDelegate(repoMock.Object);
 
-        var result = await sut.CreateAsync("Copa Arkham", TournamentType.ROUND_ROBIN, 2, 4);
+        var result = await sut.CreateAsync("Copa Arkham", TournamentType.ROUND_ROBIN, 1, 4);
 
         result.Name.Should().Be("Copa Arkham");
         result.Format.Type.Should().Be(TournamentType.ROUND_ROBIN);
-        result.Format.NumberOfGroups.Should().Be(2);
+        result.Format.NumberOfGroups.Should().Be(1);
         result.Format.MaxTeamsPerGroup.Should().Be(4);
     }
 

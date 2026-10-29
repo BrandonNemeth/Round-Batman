@@ -1,4 +1,5 @@
 using RoundBatman.Domain;
+using RoundBatman.Domain.Enums;
 using RoundBatman.Domain.Exceptions;
 
 namespace RoundBatman.Repositories;
@@ -15,6 +16,10 @@ public class MatchRepository(InMemoryDataStore store) : IMatchRepository
     public Task<List<Match>> GetByGroupAsync(string tournamentId, string groupId) =>
         Task.FromResult(GetTournamentOrThrow(tournamentId).Matches
             .Where(m => m.GroupId == groupId).ToList());
+
+    public Task<List<Match>> GetByStageAndRoundAsync(string tournamentId, MatchStage stage, int round) =>
+        Task.FromResult(GetTournamentOrThrow(tournamentId).Matches
+            .Where(m => m.Stage == stage && m.Round == round).ToList());
 
     public Task<Match?> GetByIdAsync(string tournamentId, string matchId) =>
         Task.FromResult(GetTournamentOrThrow(tournamentId).Matches

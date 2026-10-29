@@ -48,6 +48,7 @@ builder.Services.AddScoped<IMatchDelegate, MatchDelegate>();
 // Validadores (FluentValidation)
 builder.Services.AddScoped<IValidator<CreateTeamDto>, CreateTeamDtoValidator>();
 builder.Services.AddScoped<IValidator<UpdateTeamDto>, UpdateTeamDtoValidator>();
+builder.Services.AddScoped<IValidator<GenerateTeamsDto>, GenerateTeamsDtoValidator>();
 builder.Services.AddScoped<IValidator<CreateTournamentDto>, CreateTournamentDtoValidator>();
 builder.Services.AddScoped<IValidator<UpdateTournamentDto>, UpdateTournamentDtoValidator>();
 builder.Services.AddScoped<IValidator<PatchTournamentDto>, PatchTournamentDtoValidator>();
@@ -56,8 +57,15 @@ builder.Services.AddScoped<IValidator<UpdateGroupDto>, UpdateGroupDtoValidator>(
 builder.Services.AddScoped<IValidator<AssignTeamsDto>, AssignTeamsDtoValidator>();
 builder.Services.AddScoped<IValidator<CreateMatchDto>, CreateMatchDtoValidator>();
 builder.Services.AddScoped<IValidator<UpdateScoreDto>, UpdateScoreDtoValidator>();
+builder.Services.AddScoped<IValidator<SimulateResultsDto>, SimulateResultsDtoValidator>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<RoundBatmanDbContext>();
+    db.Database.Migrate();
+}
 
 // Manejo global de excepciones → respuestas ProblemDetails consistentes
 app.UseMiddleware<ExceptionHandlingMiddleware>();

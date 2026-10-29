@@ -59,6 +59,19 @@ public static class MatchRoutes
         })
         .AddEndpointFilter<ValidationFilter<UpdateScoreDto>>();
 
+        group.MapPost("/simulate-results", async (
+            string tournamentId, SimulateResultsDto dto, IMatchDelegate matchDelegate,
+            ITournamentDelegate tournamentDelegate) =>
+        {
+            var matches = await matchDelegate.SimulatePendingResultsAsync(
+                tournamentId, dto.Seed, dto.MaxGoals);
+            var teamsById = await BuildTeamsByIdAsync(tournamentId, tournamentDelegate);
+            return Results.Ok(matches.Select(match => match.ToDto(
+                teamsById.GetValueOrDefault(match.HomeTeamId),
+                teamsById.GetValueOrDefault(match.VisitorTeamId))));
+        })
+        .AddEndpointFilter<ValidationFilter<SimulateResultsDto>>();
+
         group.MapDelete("/{matchId}", async (string tournamentId, string matchId, IMatchDelegate matchDelegate) =>
             await matchDelegate.DeleteAsync(tournamentId, matchId) ? Results.NoContent() : Results.NotFound());
     }

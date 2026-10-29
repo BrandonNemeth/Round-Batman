@@ -4,6 +4,9 @@ public readonly record struct MatchPairing(string HomeTeamId, string VisitorTeam
 
 public static class RoundRobinScheduler
 {
+    public static int RequiredRounds(int teamCount) =>
+        teamCount < 2 ? 0 : teamCount % 2 == 0 ? teamCount - 1 : teamCount;
+
     /// <summary>
     /// Genera el calendario de partidos round robin (una sola vuelta) para
     /// un conjunto de equipos, usando el método del círculo.

@@ -42,6 +42,7 @@ const Api = (() => {
     // Teams
     getTeams: () => request("GET", "/teams"),
     createTeam: (dto) => request("POST", "/teams", dto),
+    generateTeams: (dto) => request("POST", "/teams/generate", dto),
     deleteTeam: (id) => request("DELETE", `/teams/${id}`),
 
     // Tournaments
@@ -64,6 +65,8 @@ const Api = (() => {
     createMatch: (tournamentId, dto) => request("POST", `/tournaments/${tournamentId}/matches`, dto),
     updateScore: (tournamentId, matchId, dto) =>
       request("PATCH", `/tournaments/${tournamentId}/matches/${matchId}/score`, dto),
+    simulateResults: (tournamentId, dto = {}) =>
+      request("POST", `/tournaments/${tournamentId}/matches/simulate-results`, dto),
     deleteMatch: (tournamentId, matchId) => request("DELETE", `/tournaments/${tournamentId}/matches/${matchId}`),
   };
 })();

@@ -8,8 +8,10 @@ public class TournamentFormatDtoValidator : AbstractValidator<TournamentFormatDt
     public TournamentFormatDtoValidator()
     {
         RuleFor(x => x.Type).IsInEnum().WithMessage("Format type must be ROUND_ROBIN or NFL.");
-        RuleFor(x => x.NumberOfGroups).GreaterThan(0).WithMessage("Number of groups must be at least 1.");
+        RuleFor(x => x.NumberOfGroups).Equal(1).WithMessage("Round Robin tournaments must have exactly one group.");
         RuleFor(x => x.MaxTeamsPerGroup).GreaterThanOrEqualTo(2).WithMessage("Max teams per group must be at least 2.");
+        RuleFor(x => x).Must(x => x.NumberOfGroups * x.MaxTeamsPerGroup <= 32)
+            .WithMessage("A tournament cannot be configured for more than 32 teams.");
     }
 }
 
@@ -38,14 +40,17 @@ public class PatchTournamentFormatDtoValidator : AbstractValidator<PatchTourname
     public PatchTournamentFormatDtoValidator()
     {
         RuleFor(x => x.NumberOfGroups)
-            .GreaterThan(0)
+            .Equal(1)
             .When(x => x.NumberOfGroups.HasValue)
-            .WithMessage("Number of groups must be at least 1.");
+            .WithMessage("Round Robin tournaments must have exactly one group.");
 
         RuleFor(x => x.MaxTeamsPerGroup)
             .GreaterThanOrEqualTo(2)
             .When(x => x.MaxTeamsPerGroup.HasValue)
             .WithMessage("Max teams per group must be at least 2.");
+        RuleFor(x => x).Must(x => !x.NumberOfGroups.HasValue || !x.MaxTeamsPerGroup.HasValue ||
+                                   x.NumberOfGroups.Value * x.MaxTeamsPerGroup.Value <= 32)
+            .WithMessage("A tournament cannot be configured for more than 32 teams.");
 
         RuleFor(x => x.Type)
             .IsInEnum()

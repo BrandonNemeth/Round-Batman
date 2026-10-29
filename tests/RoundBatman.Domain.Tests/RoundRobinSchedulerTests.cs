@@ -72,4 +72,14 @@ public class RoundRobinSchedulerTests
 
         schedule.Should().OnlyContain(p => p.HomeTeamId != p.VisitorTeamId);
     }
+
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(4, 3)]
+    [InlineData(31, 31)]
+    [InlineData(32, 31)]
+    public void RequiredRounds_ScalesToThirtyTwoTeams(int teamCount, int expectedRounds)
+    {
+        RoundRobinScheduler.RequiredRounds(teamCount).Should().Be(expectedRounds);
+    }
 }

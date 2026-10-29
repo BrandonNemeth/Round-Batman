@@ -23,9 +23,9 @@ public class GroupDelegate(
         if (existingGroups.Any(g => string.Equals(g.Name, name, StringComparison.OrdinalIgnoreCase)))
             throw new BusinessRuleException($"A group named '{name}' already exists in this tournament.");
 
-        if (existingGroups.Count >= tournament.Format.NumberOfGroups)
+        if (existingGroups.Count >= 1)
             throw new BusinessRuleException(
-                $"Tournament cannot have more than {tournament.Format.NumberOfGroups} groups.");
+                "Round Robin tournaments can have only one group.");
 
         var group = new Group { Id = Guid.NewGuid().ToString(), Name = name, TournamentId = tournamentId };
         return await groupRepository.AddAsync(group);

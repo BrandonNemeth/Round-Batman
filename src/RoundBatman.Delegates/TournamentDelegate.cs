@@ -13,6 +13,7 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
 
     public Task<Tournament> CreateAsync(string name, TournamentType type, int numberOfGroups, int maxTeamsPerGroup)
     {
+        EnsureFormatCapacity(numberOfGroups, maxTeamsPerGroup);
         var tournament = new Tournament
         {
             Id = Guid.NewGuid().ToString(),
@@ -33,6 +34,7 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
             ?? throw new NotFoundException($"Tournament {id} not found.");
 
         EnsureGroupCapacityIsValid(tournament, numberOfGroups);
+        EnsureFormatCapacity(numberOfGroups, maxTeamsPerGroup);
 
         tournament.Name = name;
         tournament.Format = new TournamentFormat
@@ -60,11 +62,15 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
         if (numberOfGroups is not null)
         {
             EnsureGroupCapacityIsValid(tournament, numberOfGroups.Value);
+            EnsureFormatCapacity(numberOfGroups.Value, tournament.Format.MaxTeamsPerGroup);
             tournament.Format.NumberOfGroups = numberOfGroups.Value;
         }
 
         if (maxTeamsPerGroup is not null)
+        {
+            EnsureFormatCapacity(tournament.Format.NumberOfGroups, maxTeamsPerGroup.Value);
             tournament.Format.MaxTeamsPerGroup = maxTeamsPerGroup.Value;
+        }
 
         await tournamentRepository.UpdateAsync(tournament);
         return tournament;
@@ -77,5 +83,12 @@ public class TournamentDelegate(ITournamentRepository tournamentRepository) : IT
         if (numberOfGroups < tournament.Groups.Count)
             throw new BusinessRuleException(
                 $"Number of groups cannot be less than the {tournament.Groups.Count} existing groups.");
+    }
+
+    private static void EnsureFormatCapacity(int numberOfGroups, int maxTeamsPerGroup)
+    {
+        if (numberOfGroups != 1 || maxTeamsPerGroup <= 0 || numberOfGroups > 32 ||
+            maxTeamsPerGroup > 32 || (long)numberOfGroups * maxTeamsPerGroup > 32)
+            throw new BusinessRuleException("A tournament cannot be configured for more than 32 teams.");
     }
 }

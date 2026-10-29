@@ -26,6 +26,11 @@ public static class TeamRoutes
         })
         .AddEndpointFilter<ValidationFilter<CreateTeamDto>>();
 
+        group.MapPost("/generate", async (GenerateTeamsDto dto, ITeamDelegate teamDelegate) =>
+            Results.Ok((await teamDelegate.GenerateAsync(dto.Count, dto.Seed))
+                .Select(team => team.ToDto())))
+        .AddEndpointFilter<ValidationFilter<GenerateTeamsDto>>();
+
         group.MapPut("/{id}", async (string id, UpdateTeamDto dto, ITeamDelegate teamDelegate) =>
         {
             var updated = await teamDelegate.UpdateAsync(id, dto.Name);

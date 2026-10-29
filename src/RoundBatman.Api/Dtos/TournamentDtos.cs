@@ -13,6 +13,8 @@ public record TournamentDto(
     string Id,
     string Name,
     TournamentStatus Status,
+    string? ChampionTeamId,
+    string? ChampionTeamName,
     TournamentFormatDto Format,
     List<GroupDto> Groups,
     List<MatchDto> Matches);
@@ -30,6 +32,11 @@ public static class TournamentMapper
             tournament.Id,
             tournament.Name,
             tournament.Status,
+            tournament.ChampionTeamId,
+            tournament.ChampionTeamId is not null &&
+            teamsById.TryGetValue(tournament.ChampionTeamId, out var champion)
+                ? champion.Name
+                : null,
             new TournamentFormatDto(tournament.Format.Type, tournament.Format.NumberOfGroups, tournament.Format.MaxTeamsPerGroup),
             tournament.Groups.Select(g => g.ToDto()).ToList(),
             tournament.Matches.Select(m => m.ToDto(

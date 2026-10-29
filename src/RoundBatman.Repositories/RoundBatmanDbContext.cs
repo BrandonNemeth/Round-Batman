@@ -23,6 +23,7 @@ public class RoundBatmanDbContext(DbContextOptions<RoundBatmanDbContext> options
         {
             entity.HasKey(tournament => tournament.Id);
             entity.Property(tournament => tournament.Name).HasMaxLength(200).IsRequired();
+            entity.Property(tournament => tournament.ChampionTeamId);
             entity.Ignore(tournament => tournament.Status);
 
             entity.OwnsOne(tournament => tournament.Format, format =>
@@ -58,6 +59,8 @@ public class RoundBatmanDbContext(DbContextOptions<RoundBatmanDbContext> options
             entity.Ignore(match => match.Winner);
             entity.Ignore(match => match.IsCompleted);
             entity.HasIndex(match => new { match.TournamentId, match.GroupId });
+            entity.HasIndex(match => new { match.TournamentId, match.Stage, match.Round });
+            entity.Property(match => match.Stage).HasConversion<string>().HasMaxLength(20);
 
             entity.OwnsOne(match => match.Score, score =>
             {

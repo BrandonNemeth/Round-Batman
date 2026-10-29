@@ -19,4 +19,13 @@ public class UpdateScoreDtoValidator : AbstractValidator<UpdateScoreDto>
         RuleFor(x => x.HomeTeamScore).GreaterThanOrEqualTo(0).WithMessage("Home team score cannot be negative.");
         RuleFor(x => x.VisitorTeamScore).GreaterThanOrEqualTo(0).WithMessage("Visitor team score cannot be negative.");
     }
+
+}
+
+public class SimulateResultsDtoValidator : AbstractValidator<SimulateResultsDto>
+{
+    public SimulateResultsDtoValidator()
+    {
+        RuleFor(x => x.MaxGoals).InclusiveBetween(1, 20);
+    }
 }

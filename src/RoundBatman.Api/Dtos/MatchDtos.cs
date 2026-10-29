@@ -6,6 +6,7 @@ namespace RoundBatman.Api.Dtos;
 public record ScoreDto(int HomeTeamScore, int VisitorTeamScore);
 public record CreateMatchDto(string? GroupId, string HomeTeamId, string VisitorTeamId);
 public record UpdateScoreDto(int HomeTeamScore, int VisitorTeamScore);
+public record SimulateResultsDto(int? Seed = null, int MaxGoals = 5);
 
 public record MatchDto(
     string Id,
@@ -15,7 +16,10 @@ public record MatchDto(
     TeamDto? HomeTeam,
     TeamDto? VisitorTeam,
     ScoreDto Score,
-    Winner? Winner);
+    Winner? Winner,
+    MatchStage Stage,
+    int Round,
+    bool IsBye);
 
 public static class MatchMapper
 {
@@ -28,5 +32,8 @@ public static class MatchMapper
         homeTeam?.ToDto(),
         visitorTeam?.ToDto(),
         new ScoreDto(match.Score.HomeTeamScore, match.Score.VisitorTeamScore),
-        match.Winner);
+        match.Winner,
+        match.Stage,
+        match.Round,
+        match.IsBye);
 }

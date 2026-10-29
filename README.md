@@ -38,6 +38,16 @@ From the repository root, run:
 dotnet test RoundBatman.slnx
 ```
 
+### Tournament progression
+
+Round Robin tournaments use exactly one group, scheduled as a single round-robin phase. Once every group match
+has a result, the top two teams from each group are seeded into an automatic
+single-elimination bracket. The API creates the next knockout round after all
+matches in the current round are completed, including bye matches when the
+number of qualifiers is odd. The bracket supports up to 32 configured teams
+(five knockout rounds at most); the champion is exposed as `ChampionTeamId` in
+the tournament model and `Stage`/`Round` are included on every match.
+
 ## Run with Podman
 
 The recommended deployment uses exactly two containers:

@@ -66,6 +66,9 @@ namespace RoundBatman.Repositories.Migrations
                     b.Property<string>("GroupId")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsBye")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("HomeTeamId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -73,6 +76,14 @@ namespace RoundBatman.Repositories.Migrations
                     b.Property<string>("TournamentId")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("Round")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("VisitorTeamId")
                         .IsRequired()
@@ -85,6 +96,8 @@ namespace RoundBatman.Repositories.Migrations
                     b.HasIndex("VisitorTeamId");
 
                     b.HasIndex("TournamentId", "GroupId");
+
+                    b.HasIndex("TournamentId", "Stage", "Round");
 
                     b.ToTable("Matches");
                 });
@@ -109,6 +122,9 @@ namespace RoundBatman.Repositories.Migrations
 
             modelBuilder.Entity("RoundBatman.Domain.Tournament", b =>
                 {
+                    b.Property<string>("ChampionTeamId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Id")
                         .HasColumnType("text");
 

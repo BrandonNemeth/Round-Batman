@@ -16,6 +16,7 @@ public class Tournament
     public TournamentFormat Format { get; set; } = new();
     public List<Group> Groups { get; set; } = [];
     public List<Match> Matches { get; set; } = [];
+    public string? ChampionTeamId { get; set; }
 
     public TournamentStatus Status
     {
@@ -28,7 +29,20 @@ public class Tournament
             var everyGroupHasMatches = Groups.All(group =>
                 Matches.Any(match => match.GroupId == group.Id));
 
-            return hasEveryConfiguredGroup && everyGroupHasMatches && Matches.All(match => match.IsCompleted)
+            if (!hasEveryConfiguredGroup || !everyGroupHasMatches)
+                return TournamentStatus.IN_PROGRESS;
+
+            var groupMatches = Matches.Where(match => match.Stage == Enums.MatchStage.GROUP);
+            if (groupMatches.Any(match => !match.IsCompleted))
+                return TournamentStatus.IN_PROGRESS;
+
+            var knockoutMatches = Matches.Where(match => match.Stage == Enums.MatchStage.KNOCKOUT).ToList();
+            if (knockoutMatches.Count == 0)
+                return ChampionTeamId is not null
+                    ? TournamentStatus.FINISHED
+                    : TournamentStatus.IN_PROGRESS;
+
+            return ChampionTeamId is not null && knockoutMatches.All(match => match.IsCompleted)
                 ? TournamentStatus.FINISHED
                 : TournamentStatus.IN_PROGRESS;
         }

@@ -9,5 +9,6 @@ public interface IMatchDelegate
     Task<Match> CreateAsync(string tournamentId, string? groupId, string homeTeamId, string visitorTeamId);
     Task<bool> DeleteAsync(string tournamentId, string matchId);
     Task<Match> UpdateScoreAsync(string tournamentId, string matchId, int homeScore, int visitorScore);
+    Task<List<Match>> SimulatePendingResultsAsync(string tournamentId, int? seed = null, int maxGoals = 5);
     Task<List<Match>> GenerateRoundRobinMatchesAsync(string tournamentId, string groupId);
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RoundBatman.Domain;
+using RoundBatman.Domain.Enums;
 using RoundBatman.Domain.Exceptions;
 
 namespace RoundBatman.Repositories;
@@ -19,6 +20,16 @@ public class PostgresMatchRepository(RoundBatmanDbContext db) : IMatchRepository
         await EnsureTournamentExists(tournamentId);
         return await db.Matches.AsNoTracking()
             .Where(match => match.TournamentId == tournamentId && match.GroupId == groupId)
+            .ToListAsync();
+    }
+
+    public async Task<List<Match>> GetByStageAndRoundAsync(string tournamentId, MatchStage stage, int round)
+    {
+        await EnsureTournamentExists(tournamentId);
+        return await db.Matches.AsNoTracking()
+            .Where(match => match.TournamentId == tournamentId &&
+                           match.Stage == stage &&
+                           match.Round == round)
             .ToListAsync();
     }
 
@@ -65,6 +76,9 @@ public class PostgresMatchRepository(RoundBatmanDbContext db) : IMatchRepository
         existing.GroupId = match.GroupId;
         existing.HomeTeamId = match.HomeTeamId;
         existing.VisitorTeamId = match.VisitorTeamId;
+        existing.Stage = match.Stage;
+        existing.Round = match.Round;
+        existing.IsBye = match.IsBye;
         existing.Score.SetResult(match.Score.HomeTeamScore, match.Score.VisitorTeamScore);
         await db.SaveChangesAsync();
     }

@@ -2,6 +2,8 @@ using FluentAssertions;
 using Moq;
 using RoundBatman.Domain;
 using RoundBatman.Domain.Exceptions;
+using RoundBatman.Domain.Enums;
+using RoundBatman.Domain.Scheduling;
 using RoundBatman.Repositories;
 using Xunit;
 using DomainMatch = RoundBatman.Domain.Match;
@@ -198,5 +200,56 @@ public class MatchDelegateTests
         var act = async () => await sut.GenerateRoundRobinMatchesAsync("tour1", "missing");
 
         await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task UpdateScoreAsync_WhenGroupPhaseCompletes_CreatesFirstKnockoutRound()
+    {
+        var teams = Enumerable.Range(1, 4)
+            .Select(index => new Team { Id = $"t{index}", Name = $"Team {index}" })
+            .ToList();
+        var group = new Group { Id = "g1", TournamentId = "tour1", Teams = teams };
+        var tournament = new Tournament
+        {
+            Id = "tour1",
+            Format = new TournamentFormat { NumberOfGroups = 1, MaxTeamsPerGroup = 4 },
+            Groups = [group],
+        };
+        var store = new InMemoryDataStore();
+        store.Tournaments[tournament.Id] = tournament;
+        var groupRepo = new GroupRepository(store);
+        var matchRepo = new MatchRepository(store);
+        var tournamentRepo = new TournamentRepository(store);
+        var scheduled = RoundRobinScheduler.GenerateSchedule(teams)
+            .Select((pairing, index) =>
+            {
+                var match = new DomainMatch
+                {
+                    Id = $"m{index}",
+                    TournamentId = "tour1",
+                    GroupId = "g1",
+                    HomeTeamId = pairing.HomeTeamId,
+                    VisitorTeamId = pairing.VisitorTeamId,
+                };
+                match.Score.SetResult(pairing.HomeTeamId == "t1" ? 3 : 0, 0);
+                return match;
+            });
+        tournament.Matches.AddRange(scheduled);
+        var pending = new DomainMatch
+        {
+            Id = "pending",
+            TournamentId = "tour1",
+            GroupId = "g1",
+            HomeTeamId = "t1",
+            VisitorTeamId = "t2",
+        };
+        pending.Score.SetResult(2, 0);
+        tournament.Matches.Add(pending);
+
+        var sut = new MatchDelegate(matchRepo, groupRepo, tournamentRepo);
+
+        await sut.UpdateScoreAsync("tour1", "pending", 2, 1);
+
+        tournament.Matches.Should().ContainSingle(match => match.Stage == MatchStage.KNOCKOUT && match.Round == 1);
     }
 }

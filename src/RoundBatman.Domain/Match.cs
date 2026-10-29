@@ -7,6 +7,9 @@ public class Match
     public string? GroupId { get; set; }
     public string HomeTeamId { get; set; } = string.Empty;
     public string VisitorTeamId { get; set; } = string.Empty;
+    public Enums.MatchStage Stage { get; set; } = Enums.MatchStage.GROUP;
+    public int Round { get; set; } = 1;
+    public bool IsBye { get; set; }
     public Score Score { get; set; } = new();
 
     public Enums.Winner? Winner => Score.GetWinner();

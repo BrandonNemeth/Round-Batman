@@ -42,18 +42,18 @@ public class TournamentStatusTests
     }
 
     [Fact]
-    public void Status_WhenEveryGroupMatchHasAResult_IsFinished()
+    public void Status_WhenEveryGroupMatchHasAResult_IsInProgressUntilEliminationFinishes()
     {
         var tournament = MakeTournament();
         var match = new Match { Id = "m1", GroupId = "g1" };
         match.Score.SetResult(2, 1);
         tournament.Matches.Add(match);
 
-        tournament.Status.Should().Be(TournamentStatus.FINISHED);
+        tournament.Status.Should().Be(TournamentStatus.IN_PROGRESS);
     }
 
     [Fact]
-    public void Status_WithRecordedDraw_IsFinished()
+    public void Status_WithRecordedDraw_IsInProgressUntilEliminationFinishes()
     {
         var tournament = MakeTournament();
         var match = new Match { Id = "m1", GroupId = "g1" };
@@ -61,7 +61,7 @@ public class TournamentStatusTests
         tournament.Matches.Add(match);
 
         match.IsCompleted.Should().BeTrue();
-        tournament.Status.Should().Be(TournamentStatus.FINISHED);
+        tournament.Status.Should().Be(TournamentStatus.IN_PROGRESS);
     }
 
     [Fact]
@@ -75,5 +75,27 @@ public class TournamentStatusTests
         tournament.Matches.Add(match);
 
         tournament.Status.Should().Be(TournamentStatus.IN_PROGRESS);
+    }
+
+    [Fact]
+    public void Status_WithCompletedKnockoutFinalAndChampion_IsFinished()
+    {
+        var tournament = MakeTournament();
+        var groupMatch = new Match { Id = "m1", GroupId = "g1" };
+        groupMatch.Score.SetResult(1, 0);
+        tournament.Matches.Add(groupMatch);
+        var final = new Match
+        {
+            Id = "m2",
+            Stage = MatchStage.KNOCKOUT,
+            Round = 1,
+            HomeTeamId = "t1",
+            VisitorTeamId = "t2",
+        };
+        final.Score.SetResult(2, 0);
+        tournament.Matches.Add(final);
+        tournament.ChampionTeamId = "t1";
+
+        tournament.Status.Should().Be(TournamentStatus.FINISHED);
     }
 }

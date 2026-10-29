@@ -62,9 +62,11 @@ async function loadTeams() {
 }
 
 function renderTeamsTable() {
-  const tbody = document.querySelector("#teams-table tbody");
+  const grid = document.getElementById("teams-grid");
   const empty = document.getElementById("teams-empty");
-  tbody.innerHTML = "";
+  const summary = document.getElementById("team-summary");
+  grid.innerHTML = "";
+  summary.textContent = `${state.teams.length} equipo${state.teams.length === 1 ? "" : "s"} registrado${state.teams.length === 1 ? "" : "s"}`;
 
   if (state.teams.length === 0) {
     empty.hidden = false;
@@ -72,15 +74,15 @@ function renderTeamsTable() {
   }
   empty.hidden = true;
 
-  for (const team of state.teams) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(team.name)}</td>
-      <td class="id-cell">${escapeHtml(team.id)}</td>
-      <td><button class="btn btn-danger btn-small" data-action="delete-team" data-id="${team.id}">Eliminar</button></td>
-    `;
-    tbody.appendChild(tr);
-  }
+  grid.innerHTML = state.teams.map((team, index) => `
+    <article class="team-card">
+      <span class="team-number">${String(index + 1).padStart(2, "0")}</span>
+      <div class="team-card-body">
+        <strong>${escapeHtml(team.name)}</strong>
+      </div>
+      <button class="btn btn-danger btn-small" data-action="delete-team" data-id="${team.id}">Eliminar</button>
+    </article>
+  `).join("");
 }
 
 async function handleCreateTeam(e) {
@@ -101,6 +103,18 @@ async function handleDeleteTeam(id) {
   const ok = await safeCall(() => Api.deleteTeam(id), "No se pudo eliminar el equipo");
   if (ok !== null || true) {
     // DELETE exitoso devuelve null (204); si hubo error, safeCall ya mostró el toast.
+    await loadTeams();
+  }
+}
+
+async function handleGenerateTeams() {
+  const count = parseInt(document.getElementById("team-count").value, 10);
+  const created = await safeCall(
+    () => Api.generateTeams({ count }),
+    "No se pudieron generar los equipos"
+  );
+  if (created) {
+    showToast(`${created.length} equipos generados`);
     await loadTeams();
   }
 }
@@ -135,7 +149,10 @@ function renderTournamentsTable() {
     tr.innerHTML = `
       <td>${escapeHtml(t.name)}</td>
       <td>${t.format?.type ?? "-"}</td>
-      <td>${statusLabels[t.status] ?? t.status ?? "-"}</td>
+      <td>
+        <span>${statusLabels[t.status] ?? t.status ?? "-"}</span>
+        ${t.championTeamName ? `<strong class="champion-inline">🏆 ${escapeHtml(t.championTeamName)}</strong>` : ""}
+      </td>
       <td class="num">${t.groups?.length ?? 0}</td>
       <td class="num">${t.matches?.length ?? 0}</td>
       <td><button class="btn btn-danger btn-small" data-action="delete-tournament" data-id="${t.id}">Eliminar</button></td>
@@ -148,7 +165,7 @@ async function handleCreateTournament(e) {
   e.preventDefault();
   const name = document.getElementById("t-name").value.trim();
   const type = document.getElementById("t-type").value;
-  const numberOfGroups = parseInt(document.getElementById("t-groups").value, 10);
+  const numberOfGroups = 1;
   const maxTeamsPerGroup = parseInt(document.getElementById("t-max-teams").value, 10);
   if (!name) return;
 
@@ -191,7 +208,10 @@ function populateTournamentSelects() {
 
   if (!state.selectedTournamentId && state.tournaments.length > 0) {
     state.selectedTournamentId = state.tournaments[0].id;
-    selects.forEach((s) => (s.value = state.selectedTournamentId));
+  }
+
+  for (const select of selects) {
+    select.value = state.selectedTournamentId ?? "";
   }
 }
 
@@ -341,6 +361,7 @@ async function loadMatches() {
     renderMatchesTable();
     return;
   }
+
   const matches = await safeCall(
     () => Api.getMatches(state.selectedTournamentId),
     "No se pudieron cargar los partidos"
@@ -350,12 +371,36 @@ async function loadMatches() {
   renderEliminationBoard();
 }
 
+async function handleSimulateResults() {
+  const tournamentId =
+    state.selectedTournamentId ||
+    document.getElementById("match-tournament-select").value;
+
+  if (!tournamentId) {
+    showToast("Selecciona un torneo primero", true);
+    return;
+  }
+
+  state.selectedTournamentId = tournamentId;
+  const matches = await safeCall(
+    () => Api.simulateResults(tournamentId, { maxGoals: 5 }),
+    "No se pudieron simular los resultados"
+  );
+  if (matches) {
+    showToast("Resultados simulados y fases avanzadas automáticamente");
+    await loadTournaments();
+    await loadMatches();
+  }
+}
+
 function selectedTournament() {
   return state.tournaments.find((t) => t.id === state.selectedTournamentId);
 }
 
 function isEliminationTournament() {
-  return selectedTournament()?.format?.type === "NFL";
+  return selectedTournament()?.format?.type === "NFL" ||
+    state.matches.some((match) => match.stage === "KNOCKOUT") ||
+    Boolean(selectedTournament()?.championTeamName);
 }
 
 function matchTeamName(match, side) {
@@ -375,12 +420,22 @@ function renderEliminationBoard() {
   }
 
   panel.hidden = false;
+  panel.querySelector(".champion-banner")?.remove();
   const eliminationMatches = state.matches.filter((match) => !match.groupId);
   if (eliminationMatches.length === 0) {
     empty.hidden = false;
     return;
   }
   empty.hidden = true;
+
+  const tournament = selectedTournament();
+  const champion = tournament?.championTeamName;
+  const championBanner = document.createElement("div");
+  championBanner.className = "champion-banner";
+  championBanner.innerHTML = champion
+    ? `<span>🏆 Campeón</span><strong>${escapeHtml(champion)}</strong>`
+    : `<span>Campeón</span><strong>Pendiente de la final</strong>`;
+  panel.querySelector(".panel-heading").after(championBanner);
 
   const roundCount = Math.max(1, Math.ceil(Math.log2(eliminationMatches.length + 1)));
   let offset = 0;
@@ -601,6 +656,9 @@ function initDelegatedClicks() {
       case "delete-team":
         handleDeleteTeam(target.dataset.id);
         break;
+      case "generate-teams":
+        handleGenerateTeams();
+        break;
       case "delete-tournament":
         handleDeleteTournament(target.dataset.id);
         break;
@@ -618,6 +676,9 @@ function initDelegatedClicks() {
         break;
       case "delete-match":
         handleDeleteMatch(target.dataset.matchId);
+        break;
+      case "simulate-results":
+        handleSimulateResults();
         break;
     }
   });

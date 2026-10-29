@@ -53,10 +53,7 @@
               <option value="NFL">Eliminación (NFL)</option>
             </select>
           </div>
-          <div class="field field-num">
-            <label for="t-groups"># Grupos</label>
-            <input id="t-groups" type="number" min="1" value="1" />
-          </div>
+          <input id="t-groups" type="hidden" value="1" />
           <div class="field field-num">
             <label for="t-max-teams">Máx. equipos/grupo</label>
             <input id="t-max-teams" type="number" min="2" value="4" />
@@ -70,7 +67,7 @@
               <tr>
                 <th>Nombre</th>
                 <th>Formato</th>
-                <th>Estado</th>
+                <th>Estado / campeón</th>
                 <th class="num">Grupos</th>
                 <th class="num">Partidos</th>
                 <th></th>
@@ -97,17 +94,21 @@
           <button type="submit" class="btn btn-primary">Agregar equipo</button>
         </form>
 
+        <div class="panel team-tools">
+          <div>
+            <strong>Generación rápida</strong>
+            <p class="helper-text">Crea nombres únicos para preparar un torneo o una prueba de carga.</p>
+          </div>
+          <div class="team-generator">
+            <label for="team-count">Cantidad</label>
+            <input id="team-count" type="number" min="1" max="32" value="8" />
+            <button type="button" class="btn btn-secondary" data-action="generate-teams">Generar equipos</button>
+          </div>
+        </div>
+
+        <div class="team-summary" id="team-summary"></div>
+        <div class="team-grid" id="teams-grid"></div>
         <div class="panel">
-          <table class="score-table" id="teams-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>ID</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
           <p class="empty-state" id="teams-empty" hidden>Aún no hay equipos registrados.</p>
         </div>
       </section>
@@ -149,6 +150,9 @@
             <label for="match-tournament-select">Torneo</label>
             <select id="match-tournament-select"></select>
           </div>
+          <button type="button" class="btn btn-secondary simulate-button" data-action="simulate-results">
+            Simular resultados pendientes
+          </button>
         </div>
 
         <form id="form-match" class="panel form-inline">
@@ -201,7 +205,7 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="api.js"></script>
-  <script src="app.js"></script>
+  <script src="api.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

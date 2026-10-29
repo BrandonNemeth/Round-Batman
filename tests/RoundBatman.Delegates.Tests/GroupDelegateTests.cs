@@ -65,7 +65,7 @@ public class GroupDelegateTests
         var act = async () => await sut.CreateAsync("tour1", "Grupo B");
 
         await act.Should().ThrowAsync<BusinessRuleException>()
-            .WithMessage("*cannot have more than 1 groups*");
+            .WithMessage("*only one group*");
         groupRepo.Verify(r => r.AddAsync(It.IsAny<Group>()), Times.Never);
     }
 
