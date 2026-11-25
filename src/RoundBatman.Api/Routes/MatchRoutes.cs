@@ -21,6 +21,17 @@ public static class MatchRoutes
                 teamsById.GetValueOrDefault(m.VisitorTeamId))));
         });
 
+        group.MapGet("/recent", async (
+            string tournamentId, IMatchDelegate matchDelegate, ITournamentDelegate tournamentDelegate) =>
+        {
+            var matches = await matchDelegate.GetRecentCompletedAsync(tournamentId);
+            var teamsById = await BuildTeamsByIdAsync(tournamentId, tournamentDelegate);
+
+            return Results.Ok(matches.Select(match => match.ToDto(
+                teamsById.GetValueOrDefault(match.HomeTeamId),
+                teamsById.GetValueOrDefault(match.VisitorTeamId))));
+        });
+
         group.MapGet("/{matchId}", async (
             string tournamentId, string matchId, IMatchDelegate matchDelegate, ITournamentDelegate tournamentDelegate) =>
         {

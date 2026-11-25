@@ -31,6 +31,35 @@ python3 -m http.server 5500
 Open `http://localhost:5500` in your browser. The client is configured to use
 the API at `http://localhost:5227`.
 
+## Run the development CLI
+
+From the repository root, start the interactive local launcher:
+
+```bash
+python3 dev.py
+```
+
+It can start/stop/status the API and database using either Podman Compose or the
+local kind cluster, start/stop the static Web UI, preview and run a SQL query for
+the latest completed matches, and run Locust interactively or headless. Locust
+prompts for pure round robin vs. hybrid format, users, spawn rate, duration, and
+teams per tournament. **Show recent matches** asks for a count and environment,
+prints the exact read-only SQL first, then asks before executing it. The Web UI is
+available at `http://localhost:5500`; set its **URL de la API**
+field to `http://localhost:8080` when using Compose or kind.
+
+The first start prompts for a PostgreSQL password and saves it in the ignored
+`.env` file with owner-only permissions. Kind receives the password as a
+Kubernetes Secret generated at runtime; it is not read from the local-only
+`database/postgres-secret.yml`. Compose and kind stop actions preserve database
+data. Stopping kind scales down the application workloads but leaves the cluster
+and its persistent volume in place.
+
+Kind actions use the `kind-kind` context and may create the `kind` cluster when
+it does not exist. They require `kind`, `kubectl`, and Podman. Compose actions
+require Podman Compose. Locust must be installed as described in
+[`load_test/README.md`](load_test/README.md).
+
 ## Run the tests
 
 From the repository root, run:
@@ -41,13 +70,16 @@ dotnet test RoundBatman.slnx
 
 ### Tournament progression
 
-Round Robin tournaments use exactly one group, scheduled as a single round-robin phase. Once every group match
-has a result, the top two teams from each group are seeded into an automatic
-single-elimination bracket. The API creates the next knockout round after all
-matches in the current round are completed, including bye matches when the
-number of qualifiers is odd. The bracket supports up to 32 configured teams
-(five knockout rounds at most); the champion is exposed as `ChampionTeamId` in
-the tournament model and `Stage`/`Round` are included on every match.
+Both formats use a single round-robin group stage. A `ROUND_ROBIN` tournament
+ends after that stage and saves the standings leader as champion. A `HYBRID`
+tournament takes the top two teams into an automatic single-elimination bracket;
+knockout rounds advance after all matches in the current round finish, including
+byes when needed. The bracket supports up to 32 configured teams (five knockout
+rounds at most). Existing tournaments are migrated to `HYBRID` to preserve their
+previous group-stage-plus-knockout behavior. The champion is exposed as
+`ChampionTeamId`; `Stage`/`Round` are included on each match. Completed matches
+record `CompletedAt`; `GET /tournaments/{id}/matches/recent` returns the 20 most
+recently completed matches without deleting older history.
 
 ## Run with Podman
 
@@ -249,7 +281,7 @@ kubectl apply -f kubernetes/monitoring/round-batman-dashboard.yml
 python3 -m venv ~/.venvs/round-batman-load
 ~/.venvs/round-batman-load/bin/pip install -r load_test/requirements.txt
 ~/.venvs/round-batman-load/bin/locust -f load_test/locustfile.py \
-  --host http://localhost:8080 --headless \
+  --host http://localhost:8080 --tournament-type HYBRID --headless \
   --users 5 --spawn-rate 1 --run-time 3m --teams-per-tournament 8
 ```
 

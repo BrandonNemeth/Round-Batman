@@ -13,6 +13,14 @@ public class MatchRepository(InMemoryDataStore store) : IMatchRepository
     public Task<List<Match>> GetAllAsync(string tournamentId) =>
         Task.FromResult(GetTournamentOrThrow(tournamentId).Matches);
 
+    public Task<List<Match>> GetRecentCompletedAsync(string tournamentId, int limit = 20) =>
+        Task.FromResult(GetTournamentOrThrow(tournamentId).Matches
+            .Where(match => match.CompletedAt.HasValue)
+            .OrderByDescending(match => match.CompletedAt)
+            .ThenBy(match => match.Id, StringComparer.Ordinal)
+            .Take(limit)
+            .ToList());
+
     public Task<List<Match>> GetByGroupAsync(string tournamentId, string groupId) =>
         Task.FromResult(GetTournamentOrThrow(tournamentId).Matches
             .Where(m => m.GroupId == groupId).ToList());

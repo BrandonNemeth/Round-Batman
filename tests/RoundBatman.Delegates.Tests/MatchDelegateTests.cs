@@ -106,7 +106,51 @@ public class MatchDelegateTests
         var result = await sut.UpdateScoreAsync("tour1", "m1", 3, 1);
 
         result.Score.HomeTeamScore.Should().Be(3);
+        result.CompletedAt.Should().NotBeNull();
         matchRepo.Verify(r => r.UpdateAsync("tour1", match), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateScoreAsync_WhenPureRoundRobinCompletes_SavesChampionWithoutKnockout()
+    {
+        var teams = new List<Team>
+        {
+            new() { Id = "t1", Name = "Team 1" },
+            new() { Id = "t2", Name = "Team 2" },
+        };
+        var group = new Group { Id = "g1", TournamentId = "tour1", Teams = teams };
+        var match = new DomainMatch
+        {
+            Id = "m1",
+            TournamentId = "tour1",
+            GroupId = "g1",
+            HomeTeamId = "t1",
+            VisitorTeamId = "t2",
+        };
+        var tournament = new Tournament
+        {
+            Id = "tour1",
+            Format = new TournamentFormat
+            {
+                Type = TournamentType.ROUND_ROBIN,
+                NumberOfGroups = 1,
+                MaxTeamsPerGroup = 2,
+            },
+            Groups = [group],
+            Matches = [match],
+        };
+        var store = new InMemoryDataStore();
+        store.Tournaments[tournament.Id] = tournament;
+        var groupRepo = new GroupRepository(store);
+        var matchRepo = new MatchRepository(store);
+        var tournamentRepo = new TournamentRepository(store);
+        var sut = new MatchDelegate(matchRepo, groupRepo, tournamentRepo);
+
+        await sut.UpdateScoreAsync("tour1", "m1", 2, 1);
+
+        tournament.ChampionTeamId.Should().Be("t1");
+        tournament.Matches.Should().ContainSingle(match => match.Stage == MatchStage.GROUP);
+        tournament.Status.Should().Be(TournamentStatus.FINISHED);
     }
 
     [Fact]
@@ -212,7 +256,12 @@ public class MatchDelegateTests
         var tournament = new Tournament
         {
             Id = "tour1",
-            Format = new TournamentFormat { NumberOfGroups = 1, MaxTeamsPerGroup = 4 },
+            Format = new TournamentFormat
+            {
+                Type = TournamentType.HYBRID,
+                NumberOfGroups = 1,
+                MaxTeamsPerGroup = 4,
+            },
             Groups = [group],
         };
         var store = new InMemoryDataStore();

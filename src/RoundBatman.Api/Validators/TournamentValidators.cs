@@ -7,7 +7,7 @@ public class TournamentFormatDtoValidator : AbstractValidator<TournamentFormatDt
 {
     public TournamentFormatDtoValidator()
     {
-        RuleFor(x => x.Type).IsInEnum().WithMessage("Format type must be ROUND_ROBIN or NFL.");
+        RuleFor(x => x.Type).IsInEnum().WithMessage("Format type must be ROUND_ROBIN or HYBRID (NFL is a legacy alias).");
         RuleFor(x => x.NumberOfGroups).Equal(1).WithMessage("Round Robin tournaments must have exactly one group.");
         RuleFor(x => x.MaxTeamsPerGroup).GreaterThanOrEqualTo(2).WithMessage("Max teams per group must be at least 2.");
         RuleFor(x => x).Must(x => x.NumberOfGroups * x.MaxTeamsPerGroup <= 32)
@@ -55,7 +55,7 @@ public class PatchTournamentFormatDtoValidator : AbstractValidator<PatchTourname
         RuleFor(x => x.Type)
             .IsInEnum()
             .When(x => x.Type.HasValue)
-            .WithMessage("Format type must be ROUND_ROBIN or NFL.");
+            .WithMessage("Format type must be ROUND_ROBIN or HYBRID (NFL is a legacy alias).");
     }
 }
 

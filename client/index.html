@@ -49,8 +49,8 @@
           <div class="field">
             <label for="t-type">Formato</label>
             <select id="t-type">
-              <option value="ROUND_ROBIN">Round Robin</option>
-              <option value="NFL">Eliminación (NFL)</option>
+              <option value="ROUND_ROBIN">Round Robin puro</option>
+              <option value="HYBRID">Round Robin + eliminación</option>
             </select>
           </div>
           <input id="t-groups" type="hidden" value="1" />
@@ -187,6 +187,29 @@
           <p class="empty-state" id="matches-empty" hidden>Este torneo no tiene partidos todavía.</p>
         </div>
 
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Últimos 20 partidos finalizados</h2>
+              <p>Se conserva el historial completo del torneo.</p>
+            </div>
+          </div>
+          <table class="score-table" id="recent-matches-table">
+            <thead>
+              <tr>
+                <th>Fase</th>
+                <th>Local</th>
+                <th class="num">Marcador</th>
+                <th>Visitante</th>
+                <th>Ganador</th>
+                <th>Finalizado</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="empty-state" id="recent-matches-empty" hidden>No hay partidos finalizados todavía.</p>
+        </div>
+
         <div class="panel elimination-panel" id="elimination-panel" hidden>
           <div class="panel-heading">
             <div>
@@ -205,7 +228,7 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="api.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="api.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

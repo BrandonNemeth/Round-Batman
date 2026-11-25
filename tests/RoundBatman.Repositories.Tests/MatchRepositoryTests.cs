@@ -64,6 +64,28 @@ public class MatchRepositoryTests
     }
 
     [Fact]
+    public async Task GetRecentCompletedAsync_ReturnsAtMostTwentyCompletedMatchesNewestFirst()
+    {
+        var (sut, store) = CreateSut();
+        var tournament = MakeTournament();
+        var completedAt = DateTimeOffset.UtcNow;
+        tournament.Matches.AddRange(Enumerable.Range(0, 25).Select(index => new Match
+        {
+            Id = $"m{index:D2}",
+            CompletedAt = completedAt.AddMinutes(index),
+        }));
+        tournament.Matches.Add(new Match { Id = "pending" });
+        store.Tournaments[tournament.Id] = tournament;
+
+        var result = await sut.GetRecentCompletedAsync(tournament.Id);
+
+        result.Should().HaveCount(20);
+        result.First().Id.Should().Be("m24");
+        result.Last().Id.Should().Be("m05");
+        result.Should().OnlyContain(match => match.CompletedAt.HasValue);
+    }
+
+    [Fact]
     public async Task GetByGroupAsync_ReturnsOnlyMatchesInThatGroup()
     {
         var (sut, store) = CreateSut();

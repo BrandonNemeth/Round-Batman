@@ -15,6 +15,17 @@ public class PostgresMatchRepository(RoundBatmanDbContext db) : IMatchRepository
             .ToListAsync();
     }
 
+    public async Task<List<Match>> GetRecentCompletedAsync(string tournamentId, int limit = 20)
+    {
+        await EnsureTournamentExists(tournamentId);
+        return await db.Matches.AsNoTracking()
+            .Where(match => match.TournamentId == tournamentId && match.CompletedAt != null)
+            .OrderByDescending(match => match.CompletedAt)
+            .ThenBy(match => match.Id)
+            .Take(limit)
+            .ToListAsync();
+    }
+
     public async Task<List<Match>> GetByGroupAsync(string tournamentId, string groupId)
     {
         await EnsureTournamentExists(tournamentId);
@@ -79,6 +90,7 @@ public class PostgresMatchRepository(RoundBatmanDbContext db) : IMatchRepository
         existing.Stage = match.Stage;
         existing.Round = match.Round;
         existing.IsBye = match.IsBye;
+        existing.CompletedAt = match.CompletedAt;
         existing.Score.SetResult(match.Score.HomeTeamScore, match.Score.VisitorTeamScore);
         await db.SaveChangesAsync();
     }

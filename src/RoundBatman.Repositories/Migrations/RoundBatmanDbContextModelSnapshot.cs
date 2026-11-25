@@ -63,6 +63,9 @@ namespace RoundBatman.Repositories.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("GroupId")
                         .HasColumnType("text");
 
@@ -98,6 +101,8 @@ namespace RoundBatman.Repositories.Migrations
                     b.HasIndex("TournamentId", "GroupId");
 
                     b.HasIndex("TournamentId", "Stage", "Round");
+
+                    b.HasIndex("TournamentId", "CompletedAt");
 
                     b.ToTable("Matches");
                 });

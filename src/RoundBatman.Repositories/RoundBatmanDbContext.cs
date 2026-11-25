@@ -60,7 +60,9 @@ public class RoundBatmanDbContext(DbContextOptions<RoundBatmanDbContext> options
             entity.Ignore(match => match.IsCompleted);
             entity.HasIndex(match => new { match.TournamentId, match.GroupId });
             entity.HasIndex(match => new { match.TournamentId, match.Stage, match.Round });
+            entity.HasIndex(match => new { match.TournamentId, match.CompletedAt });
             entity.Property(match => match.Stage).HasConversion<string>().HasMaxLength(20);
+            entity.Property(match => match.CompletedAt).HasColumnType("timestamp with time zone");
 
             entity.OwnsOne(match => match.Score, score =>
             {

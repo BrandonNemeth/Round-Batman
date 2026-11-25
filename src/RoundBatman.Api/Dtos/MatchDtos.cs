@@ -19,7 +19,8 @@ public record MatchDto(
     Winner? Winner,
     MatchStage Stage,
     int Round,
-    bool IsBye);
+    bool IsBye,
+    DateTimeOffset? CompletedAt);
 
 public static class MatchMapper
 {
@@ -35,5 +36,6 @@ public static class MatchMapper
         match.Winner,
         match.Stage,
         match.Round,
-        match.IsBye);
+        match.IsBye,
+        match.CompletedAt);
 }

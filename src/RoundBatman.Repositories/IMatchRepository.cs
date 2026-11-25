@@ -6,6 +6,7 @@ namespace RoundBatman.Repositories;
 public interface IMatchRepository
 {
     Task<List<Match>> GetAllAsync(string tournamentId);
+    Task<List<Match>> GetRecentCompletedAsync(string tournamentId, int limit = 20);
     Task<List<Match>> GetByGroupAsync(string tournamentId, string groupId);
     Task<List<Match>> GetByStageAndRoundAsync(string tournamentId, MatchStage stage, int round);
     Task<Match?> GetByIdAsync(string tournamentId, string matchId);

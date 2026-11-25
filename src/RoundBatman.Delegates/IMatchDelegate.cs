@@ -5,6 +5,7 @@ namespace RoundBatman.Delegates;
 public interface IMatchDelegate
 {
     Task<List<Match>> GetAllAsync(string tournamentId);
+    Task<List<Match>> GetRecentCompletedAsync(string tournamentId, int limit = 20);
     Task<Match?> GetByIdAsync(string tournamentId, string matchId);
     Task<Match> CreateAsync(string tournamentId, string? groupId, string homeTeamId, string visitorTeamId);
     Task<bool> DeleteAsync(string tournamentId, string matchId);

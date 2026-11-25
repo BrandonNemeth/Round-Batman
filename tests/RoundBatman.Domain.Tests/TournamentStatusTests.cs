@@ -42,7 +42,7 @@ public class TournamentStatusTests
     }
 
     [Fact]
-    public void Status_WhenEveryGroupMatchHasAResult_IsInProgressUntilEliminationFinishes()
+    public void Status_WhenEveryGroupMatchHasAResult_IsInProgressUntilChampionIsSaved()
     {
         var tournament = MakeTournament();
         var match = new Match { Id = "m1", GroupId = "g1" };
@@ -53,7 +53,7 @@ public class TournamentStatusTests
     }
 
     [Fact]
-    public void Status_WithRecordedDraw_IsInProgressUntilEliminationFinishes()
+    public void Status_WithRecordedDraw_IsInProgressUntilChampionIsSaved()
     {
         var tournament = MakeTournament();
         var match = new Match { Id = "m1", GroupId = "g1" };
@@ -75,6 +75,18 @@ public class TournamentStatusTests
         tournament.Matches.Add(match);
 
         tournament.Status.Should().Be(TournamentStatus.IN_PROGRESS);
+    }
+
+    [Fact]
+    public void Status_WithCompletedPureRoundRobinAndChampion_IsFinished()
+    {
+        var tournament = MakeTournament();
+        var groupMatch = new Match { Id = "m1", GroupId = "g1" };
+        groupMatch.Score.SetResult(2, 1);
+        tournament.Matches.Add(groupMatch);
+        tournament.ChampionTeamId = "t1";
+
+        tournament.Status.Should().Be(TournamentStatus.FINISHED);
     }
 
     [Fact]

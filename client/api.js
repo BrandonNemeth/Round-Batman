@@ -62,6 +62,7 @@ const Api = (() => {
 
     // Matches
     getMatches: (tournamentId) => request("GET", `/tournaments/${tournamentId}/matches`),
+    getRecentMatches: (tournamentId) => request("GET", `/tournaments/${tournamentId}/matches/recent`),
     createMatch: (tournamentId, dto) => request("POST", `/tournaments/${tournamentId}/matches`, dto),
     updateScore: (tournamentId, matchId, dto) =>
       request("PATCH", `/tournaments/${tournamentId}/matches/${matchId}/score`, dto),

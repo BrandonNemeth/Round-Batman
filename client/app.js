@@ -5,6 +5,7 @@ const state = {
   selectedTournamentId: null,
   groups: [],
   matches: [],
+  recentMatches: [],
 };
 
 // --- Utilidades de UI ---
@@ -145,10 +146,15 @@ function renderTournamentsTable() {
       IN_PROGRESS: "En progreso",
       FINISHED: "Finalizado",
     };
+    const formatLabels = {
+      ROUND_ROBIN: "Round Robin puro",
+      HYBRID: "Round Robin + eliminación",
+      NFL: "Híbrido (legacy)",
+    };
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${escapeHtml(t.name)}</td>
-      <td>${t.format?.type ?? "-"}</td>
+      <td>${escapeHtml(formatLabels[t.format?.type] ?? t.format?.type ?? "-")}</td>
       <td>
         <span>${statusLabels[t.status] ?? t.status ?? "-"}</span>
         ${t.championTeamName ? `<strong class="champion-inline">🏆 ${escapeHtml(t.championTeamName)}</strong>` : ""}
@@ -358,16 +364,26 @@ async function handleGenerateMatches(groupId) {
 async function loadMatches() {
   if (!state.selectedTournamentId) {
     state.matches = [];
+    state.recentMatches = [];
     renderMatchesTable();
+    renderRecentMatches();
     return;
   }
 
-  const matches = await safeCall(
-    () => Api.getMatches(state.selectedTournamentId),
-    "No se pudieron cargar los partidos"
-  );
+  const [matches, recentMatches] = await Promise.all([
+    safeCall(
+      () => Api.getMatches(state.selectedTournamentId),
+      "No se pudieron cargar los partidos"
+    ),
+    safeCall(
+      () => Api.getRecentMatches(state.selectedTournamentId),
+      "No se pudo cargar el historial reciente"
+    ),
+  ]);
   state.matches = matches || [];
+  state.recentMatches = recentMatches || [];
   renderMatchesTable();
+  renderRecentMatches();
   renderEliminationBoard();
 }
 
@@ -398,7 +414,7 @@ function selectedTournament() {
 }
 
 function isEliminationTournament() {
-  return selectedTournament()?.format?.type === "NFL" ||
+  return ["HYBRID", "NFL"].includes(selectedTournament()?.format?.type) ||
     state.matches.some((match) => match.stage === "KNOCKOUT") ||
     Boolean(selectedTournament()?.championTeamName);
 }
@@ -523,6 +539,45 @@ function renderMatchesTable() {
       </td>
     `;
     tbody.appendChild(tr);
+  }
+}
+
+function renderRecentMatches() {
+  const tbody = document.querySelector("#recent-matches-table tbody");
+  const empty = document.getElementById("recent-matches-empty");
+  tbody.innerHTML = "";
+
+  if (!state.selectedTournamentId || state.recentMatches.length === 0) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  for (const match of state.recentMatches) {
+    const homeName = matchTeamName(match, "home");
+    const visitorName = matchTeamName(match, "visitor");
+    const homeScore = match.score?.homeTeamScore ?? 0;
+    const visitorScore = match.score?.visitorTeamScore ?? 0;
+    const winnerName = match.winner === "HOME"
+      ? homeName
+      : match.winner === "VISITOR" ? visitorName : "—";
+    const stage = match.stage === "KNOCKOUT"
+      ? `Eliminación · ronda ${match.round}`
+      : "Fase de grupos";
+    const completedAt = match.completedAt
+      ? new Date(match.completedAt).toLocaleString("es-ES")
+      : "—";
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${escapeHtml(stage)}</td>
+      <td>${escapeHtml(homeName)}</td>
+      <td class="num">${homeScore} – ${visitorScore}</td>
+      <td>${escapeHtml(visitorName)}</td>
+      <td>${escapeHtml(winnerName)}</td>
+      <td>${escapeHtml(completedAt)}</td>
+    `;
+    tbody.appendChild(row);
   }
 }
 

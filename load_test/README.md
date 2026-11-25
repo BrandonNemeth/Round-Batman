@@ -1,7 +1,9 @@
 # Round-Batman API load test (Locust)
 
 Each simulated user runs an independent, complete tournament lifecycle with
-unique resource names. A scenario covers every implemented API route:
+unique resource names. Choose `ROUND_ROBIN` for a pure round robin or `HYBRID`
+for the round-robin-plus-knockout format. The default is `HYBRID`. A scenario
+covers every implemented API route:
 
 - `GET /health` and `GET /health/db`.
 - Team create, read, update, list, delete, and `POST /teams/generate`.
@@ -12,7 +14,11 @@ unique resource names. A scenario covers every implemented API route:
 - Round-robin match generation, match read/list, score update, explicit match
   create/delete, and `POST .../matches/simulate-results`.
 - End-to-end verification that the tournament reaches `FINISHED` with a
-  champion and knockout matches.
+  champion; hybrid runs must include knockout matches and pure round robin runs
+  must not.
+- `GET .../matches/recent` returns the 20 most recently completed matches (or all
+  completed matches when fewer than 20 exist), newest first, with completion
+  timestamps. The full match history remains available from `GET .../matches`.
 
 The script groups statistics by route template rather than individual UUIDs,
 validates status codes, IDs, `Location` headers, and response content, and
@@ -49,7 +55,7 @@ database whose data you need to keep.
 
 ```bash
 ~/.venvs/round-batman-load/bin/locust -f load_test/locustfile.py \
-  --host http://localhost:8080
+  --host http://localhost:8080 --tournament-type HYBRID
 ```
 
 Open <http://localhost:8089>, start with a small user count, and watch the
@@ -60,14 +66,15 @@ scenarios; requests inside a scenario run in sequence.
 
 ```bash
 ~/.venvs/round-batman-load/bin/locust -f load_test/locustfile.py \
-  --host http://localhost:8080 \
+  --host http://localhost:8080 --tournament-type HYBRID \
   --headless --users 5 --spawn-rate 1 --run-time 2m \
   --teams-per-tournament 8 \
   --csv /tmp/round-batman-load --html /tmp/round-batman-load.html
 ```
 
-`--teams-per-tournament` must be between 2 and 32. The generated group schedule
-contains `teams * (teams - 1) / 2` matches, so larger values produce
+`--tournament-type` accepts `ROUND_ROBIN` (pure) or `HYBRID` and defaults to
+`HYBRID`. `--teams-per-tournament` must be between 2 and 32. The generated group
+schedule contains `teams * (teams - 1) / 2` matches, so larger values produce
 significantly more work per scenario.
 
 `--keep-data` keeps the main tournament and its teams after each scenario. The

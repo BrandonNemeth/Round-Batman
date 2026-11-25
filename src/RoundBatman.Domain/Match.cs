@@ -9,6 +9,7 @@ public class Match
     public string VisitorTeamId { get; set; } = string.Empty;
     public Enums.MatchStage Stage { get; set; } = Enums.MatchStage.GROUP;
     public int Round { get; set; } = 1;
+    public DateTimeOffset? CompletedAt { get; set; }
     public bool IsBye { get; set; }
     public Score Score { get; set; } = new();
 

@@ -8,6 +8,7 @@ template instead of individual UUIDs.
 
 import logging
 from argparse import ArgumentTypeError
+from datetime import datetime
 from time import perf_counter
 from uuid import uuid4
 
@@ -31,6 +32,12 @@ def add_options(parser):
         help="Teams in each tournament (2-32, default 8).",
     )
     parser.add_argument(
+        "--tournament-type",
+        choices=("ROUND_ROBIN", "HYBRID"),
+        default="HYBRID",
+        help="Tournament format: pure round robin or round robin plus knockout.",
+    )
+    parser.add_argument(
         "--keep-data",
         action="store_true",
         help="Keep the main tournament and its teams after each scenario.",
@@ -47,6 +54,7 @@ class RoundBatmanUser(HttpUser):
     def on_start(self):
         options = self.environment.parsed_options
         self.team_count = getattr(options, "teams_per_tournament", 8)
+        self.tournament_type = getattr(options, "tournament_type", "HYBRID")
         self.keep_data = getattr(options, "keep_data", False)
         if not 2 <= self.team_count <= 32:
             message = (
@@ -149,6 +157,29 @@ class RoundBatmanUser(HttpUser):
 
         return validate
 
+    @staticmethod
+    def recent_matches_validator(response, expected_count=None):
+        matches = RoundBatmanUser.match_list(response)
+        if len(matches) > 20:
+            raise ValueError(f"Expected at most 20 recent matches, got {len(matches)}")
+        if expected_count is not None and len(matches) != expected_count:
+            raise ValueError(
+                f"Expected {expected_count} recent completed matches, got {len(matches)}"
+            )
+
+        timestamps = []
+        for match in matches:
+            value = match.get("completedAt")
+            if not isinstance(value, str) or not value:
+                raise ValueError("Recent match is missing completedAt")
+            try:
+                timestamps.append(datetime.fromisoformat(value.replace("Z", "+00:00")))
+            except ValueError as error:
+                raise ValueError("Recent match has an invalid completedAt") from error
+        if timestamps != sorted(timestamps, reverse=True):
+            raise ValueError("Recent matches are not ordered newest first")
+        return matches
+
     def generated_teams_validator(self, response):
         teams = response.json()
         if not isinstance(teams, list) or len(teams) != 1:
@@ -188,28 +219,34 @@ class RoundBatmanUser(HttpUser):
             document = self.object_validator(
                 {"id": tournament_id, "name": name, "status": "FINISHED"}
             )(response)
+            if document.get("format", {}).get("type") != self.tournament_type:
+                raise ValueError("Tournament format does not match the selected type")
             champion = document.get("championTeamId")
             if champion not in team_ids:
                 raise ValueError("Champion is not one of the tournament teams")
             if not document.get("championTeamName"):
                 raise ValueError("Finished tournament is missing the champion name")
             matches = document.get("matches")
-            if not isinstance(matches, list) or not any(
-                match.get("stage") == "KNOCKOUT" for match in matches
-            ):
-                raise ValueError("Finished tournament has no knockout matches")
+            if not isinstance(matches, list):
+                raise ValueError("Finished tournament is missing its matches")
+            has_knockout = any(match.get("stage") == "KNOCKOUT" for match in matches)
+            if self.tournament_type == "HYBRID" and not has_knockout:
+                raise ValueError("Hybrid tournament finished without knockout matches")
+            if self.tournament_type == "ROUND_ROBIN" and has_knockout:
+                raise ValueError("Pure round robin unexpectedly created knockout matches")
             return document
 
         return validate
 
-    @staticmethod
-    def simulated_matches_validator(response):
-        matches = RoundBatmanUser.match_list(response)
+    def simulated_matches_validator(self, response):
+        matches = self.match_list(response)
         if not matches:
             raise ValueError("Simulation returned no matches")
         knockout = [match for match in matches if match.get("stage") == "KNOCKOUT"]
-        if not knockout:
-            raise ValueError("Simulation created no knockout matches")
+        if self.tournament_type == "HYBRID" and not knockout:
+            raise ValueError("Hybrid simulation created no knockout matches")
+        if self.tournament_type == "ROUND_ROBIN" and knockout:
+            raise ValueError("Pure round robin created knockout matches")
         for match in knockout:
             if not match.get("isBye") and match.get("winner") is None:
                 raise ValueError("Knockout match has no winner")
@@ -307,7 +344,7 @@ class RoundBatmanUser(HttpUser):
     def run_tournament(self, run_id, team_ids):
         tournament_name = f"load-{run_id}-tournament"
         tournament_format = {
-            "type": "ROUND_ROBIN",
+            "type": self.tournament_type,
             "numberOfGroups": 1,
             "maxTeamsPerGroup": len(team_ids),
         }
@@ -414,11 +451,21 @@ class RoundBatmanUser(HttpUser):
             ),
         )
 
-        self.request(
+        simulated_matches = self.request(
             "POST", f"{matches_path}/simulate-results",
             "POST /tournaments/{tournamentId}/matches/simulate-results",
             payload={"maxGoals": 5}, validate=self.simulated_matches_validator,
             timeout=120,
+        )
+        expected_recent_count = min(
+            20, sum(match.get("completedAt") is not None for match in simulated_matches)
+        )
+        self.request(
+            "GET", f"{matches_path}/recent",
+            "GET /tournaments/{tournamentId}/matches/recent",
+            validate=lambda response: self.recent_matches_validator(
+                response, expected_recent_count
+            ),
         )
         self.request(
             "GET", f"/tournaments/{tournament_id}",

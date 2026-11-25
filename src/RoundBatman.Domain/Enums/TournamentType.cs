@@ -3,5 +3,6 @@ namespace RoundBatman.Domain.Enums;
 public enum TournamentType
 {
     ROUND_ROBIN,
-    NFL
+    HYBRID,
+    NFL // Legacy API alias; treated as hybrid.
 }

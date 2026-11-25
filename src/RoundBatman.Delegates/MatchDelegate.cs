@@ -13,6 +13,9 @@ public class MatchDelegate(
 {
     public Task<List<Match>> GetAllAsync(string tournamentId) => matchRepository.GetAllAsync(tournamentId);
 
+    public Task<List<Match>> GetRecentCompletedAsync(string tournamentId, int limit = 20) =>
+        matchRepository.GetRecentCompletedAsync(tournamentId, limit);
+
     public Task<Match?> GetByIdAsync(string tournamentId, string matchId) =>
         matchRepository.GetByIdAsync(tournamentId, matchId);
 
@@ -62,6 +65,7 @@ public class MatchDelegate(
             throw new BusinessRuleException("Knockout matches cannot end in a draw.");
 
         match.Score.SetResult(homeScore, visitorScore);
+        match.CompletedAt = DateTimeOffset.UtcNow;
         await matchRepository.UpdateAsync(tournamentId, match);
         await AdvanceTournamentAsync(tournamentId);
         return match;
@@ -145,7 +149,15 @@ public class MatchDelegate(
         var knockoutMatches = matches.Where(match => match.Stage == MatchStage.KNOCKOUT).ToList();
         if (knockoutMatches.Count == 0)
         {
-            var qualifiers = GetQualifiers(tournament.Groups, groupMatches);
+            var standings = GetStandings(tournament.Groups, groupMatches);
+            if (tournament.Format.Type == TournamentType.ROUND_ROBIN)
+            {
+                tournament.ChampionTeamId = standings.FirstOrDefault()?.Id;
+                await tournamentRepository.UpdateAsync(tournament);
+                return;
+            }
+
+            var qualifiers = standings.Take(2).ToList();
             if (qualifiers.Count <= 1)
             {
                 tournament.ChampionTeamId = qualifiers.SingleOrDefault()?.Id;
@@ -206,6 +218,7 @@ public class MatchDelegate(
                 IsBye = true,
             };
             bye.Score.SetResult(1, 0);
+            bye.CompletedAt = DateTimeOffset.UtcNow;
             matches.Add(bye);
         }
 
@@ -213,12 +226,12 @@ public class MatchDelegate(
             await matchRepository.AddRangeAsync(tournamentId, matches);
     }
 
-    private static List<Team> GetQualifiers(List<Group> groups, List<Match> matches)
+    private static List<Team> GetStandings(List<Group> groups, List<Match> matches)
     {
-        var qualifiers = new List<Team>();
+        var standings = new List<Team>();
         foreach (var group in groups)
         {
-            var stats = group.Teams.Select(team =>
+            var rankedTeams = group.Teams.Select(team =>
             {
                 var teamMatches = matches.Where(match =>
                     match.GroupId == group.Id &&
@@ -243,12 +256,11 @@ public class MatchDelegate(
             .ThenByDescending(stat => stat.GoalDifference)
             .ThenByDescending(stat => stat.GoalsFor)
             .ThenBy(stat => stat.Team.Id)
-            .Take(2)
             .Select(stat => stat.Team);
 
-            qualifiers.AddRange(stats);
+            standings.AddRange(rankedTeams);
         }
 
-        return qualifiers;
+        return standings;
     }
 }
