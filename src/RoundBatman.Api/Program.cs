@@ -1,6 +1,9 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using RoundBatman.Api.Dtos;
 using RoundBatman.Api.Extensions;
 using RoundBatman.Api.Routes;
@@ -30,8 +33,31 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<RoundBatmanDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("RoundBatman")));
+var connectionString = builder.Configuration.GetConnectionString("RoundBatman")
+    ?? throw new InvalidOperationException("ConnectionStrings:RoundBatman is required.");
+
+// Use a named pool so Npgsql metric labels do not expose the connection string.
+builder.Services.AddSingleton(_ => new NpgsqlDataSourceBuilder(connectionString)
+{
+    Name = "round-batman-db",
+}.Build());
+
+builder.Services.AddDbContext<RoundBatmanDbContext>((serviceProvider, options) =>
+    options.UseNpgsql(serviceProvider.GetRequiredService<NpgsqlDataSource>()));
+
+// Prometheus metrics: ASP.NET Core requests, .NET runtime, and Npgsql client pool.
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(
+        builder.Configuration["OTEL_SERVICE_NAME"] ?? "round-batman-api"))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddMeter("Npgsql")
+        .AddView("http.server.request.duration", new ExplicitBucketHistogramConfiguration
+        {
+            Boundaries = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+        })
+        .AddPrometheusExporter());
 
 // Repositories
 builder.Services.AddScoped<ITeamRepository, PostgresTeamRepository>();
@@ -72,7 +98,17 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("AllowFrontend");
 
+app.MapPrometheusScrapingEndpoint();
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// Confirms that the API can reach PostgreSQL, not just that the API process is up.
+app.MapGet("/health/db", async (RoundBatmanDbContext db) =>
+    await db.Database.CanConnectAsync()
+        ? Results.Ok(new { status = "ok", database = "connected" })
+        : Results.Json(
+            new { status = "error", database = "unavailable" },
+            statusCode: StatusCodes.Status503ServiceUnavailable));
 
 app.MapTeamRoutes();
 app.MapTournamentRoutes();

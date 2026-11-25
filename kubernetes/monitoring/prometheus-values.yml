@@ -1,0 +1,49 @@
+# Local-only kube-prometheus-stack values for the existing kind cluster.
+# Apply with Helm; do not `kubectl apply` this file.
+#
+#   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+#     --version 92.18.0 --namespace monitoring --create-namespace --wait --timeout 10m \
+#     -f kubernetes/monitoring/prometheus-values.yml
+#
+# kind.yml maps host :3000 -> NodePort 30030 (Grafana) and
+# host :9090 -> NodePort 30090 (Prometheus).
+grafana:
+  # Local development only. Change this before exposing Grafana anywhere else.
+  adminPassword: admin
+  service:
+    type: NodePort
+    nodePort: 30030
+  persistence:
+    enabled: false
+  # The chart's dashboard sidecar discovers ConfigMaps labelled
+  # grafana_dashboard=1 in every namespace.
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30090
+  prometheusSpec:
+    retention: 2d
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    # Select ServiceMonitors labelled release=monitoring in any namespace.
+    serviceMonitorSelector:
+      matchLabels:
+        release: monitoring
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelector:
+      matchLabels:
+        release: monitoring
+    podMonitorNamespaceSelector: {}
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+
+# Keep the local stack small; alerting is not part of this setup.
+alertmanager:
+  enabled: false

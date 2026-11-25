@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: round-batman-config
+  namespace: round-batman
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  ASPNETCORE_URLS: http://+:8080
+  # The container entrypoint runs the EF Core migration bundle before starting the API.
+  RUN_MIGRATIONS: "true"

@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: round-batman-api
+  namespace: round-batman
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: round-batman-api
+  endpoints:
+    # `http` is the Service port name in kubernetes/api.yml.
+    - port: http
+      path: /metrics
+      interval: 15s
